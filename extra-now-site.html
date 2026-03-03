@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extra Now - Trouvez un Extra Qualifié en 24h</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #1a1a2e;
+            --primary-dark: #0f3460;
+            --accent: #ff6b35;
+            --accent-light: #ffa94d;
+            --white: #f8f9fa;
+            --text-dark: #2c3e50;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: var(--text-dark); }
+        header { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 1rem 0; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        nav { max-width: 1200px; margin: 0 auto; padding: 0 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.8rem; font-weight: 700; letter-spacing: 1px; }
+        .logo span { color: var(--accent); }
+        nav ul { display: flex; list-style: none; gap: 2rem; }
+        nav a { color: white; text-decoration: none; transition: color 0.3s; cursor: pointer; }
+        nav a:hover { color: var(--accent); }
+        .hero { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; padding: 6rem 2rem; text-align: center; min-height: 600px; display: flex; flex-direction: column; justify-content: center; }
+        .hero h1 { font-size: 3.5rem; margin-bottom: 1rem; font-weight: 800; }
+        .hero .highlight { color: var(--accent); }
+        .hero p { font-size: 1.3rem; margin-bottom: 3rem; opacity: 0.95; }
+        .btn-group { display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap; }
+        .btn { padding: 1rem 2.5rem; font-size: 1rem; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s; font-weight: 600; text-decoration: none; display: inline-block; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: var(--accent-light); transform: translateY(-2px); box-shadow: 0 10px 25px rgba(255, 107, 53, 0.3); }
+        .btn-secondary { background: white; color: var(--primary); }
+        .btn-secondary:hover { background: #f0f0f0; transform: translateY(-2px); }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+        section { padding: 5rem 2rem; }
+        section h2 { font-size: 2.5rem; margin-bottom: 1rem; color: var(--primary); text-align: center; }
+        section h2 .accent { color: var(--accent); }
+        .section-subtitle { text-align: center; font-size: 1.1rem; color: #666; margin-bottom: 3rem; }
+        .how-it-works { background: #f8f9fa; }
+        .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-top: 3rem; }
+        .step { background: white; padding: 2rem; border-radius: 12px; text-align: center; border-top: 4px solid var(--accent); transition: transform 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .step:hover { transform: translateY(-10px); box-shadow: 0 15px 35px rgba(0,0,0,0.15); }
+        .step-number { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: bold; margin: 0 auto 1rem; }
+        .stats { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; }
+        .stats h2 { color: white; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-top: 3rem; }
+        .stat-number { font-size: 3rem; font-weight: 800; color: var(--accent); margin-bottom: 0.5rem; }
+        .testimonials { background: #f8f9fa; }
+        .testimonials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-top: 3rem; }
+        .testimonial { background: white; padding: 2rem; border-radius: 12px; border-left: 4px solid var(--accent); box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .testimonial-quote { color: #666; font-style: italic; margin-bottom: 1.5rem; line-height: 1.8; }
+        .testimonial-author { display: flex; align-items: center; gap: 1rem; }
+        .author-avatar { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-light)); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+        .author-info h4 { color: var(--primary); margin-bottom: 0.2rem; }
+        .author-info p { font-size: 0.9rem; color: #999; }
+        .security { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; }
+        .security h2 { color: white; }
+        .security-items { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-top: 3rem; }
+        .security-item { background: rgba(255,255,255,0.1); padding: 2rem; border-radius: 12px; text-align: center; }
+        .security-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .cta { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%); color: white; text-align: center; padding: 4rem 2rem; }
+        .cta h2 { color: white; }
+        .cta p { font-size: 1.2rem; margin-bottom: 2rem; }
+        footer { background: var(--primary); color: white; padding: 3rem 2rem 1rem; }
+        .footer-content { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-bottom: 2rem; }
+        .footer-section h4 { margin-bottom: 1rem; color: var(--accent); }
+        .footer-section ul { list-style: none; }
+        .footer-section a { color: #bbb; text-decoration: none; transition: color 0.3s; cursor: pointer; }
+        .footer-section a:hover { color: var(--accent); }
+        .footer-bottom { text-align: center; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); color: #999; }
+        .page { display: none; }
+        .page.active { display: block; }
+        @media (max-width: 768px) { .hero h1 { font-size: 2.2rem; } nav ul { gap: 1rem; font-size: 0.9rem; } }
+        @media (max-width: 480px) { nav ul { display: none; } .hero h1 { font-size: 1.8rem; } .btn-group { flex-direction: column; } .btn { width: 100%; } }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">Extra<span>Now</span></div>
+            <ul>
+                <li><a onclick="showPage('home')">Accueil</a></li>
+                <li><a onclick="showPage('entreprise')">Entreprises</a></li>
+                <li><a onclick="showPage('extra')">Extras</a></li>
+                <li><a onclick="showPage('faq')">FAQ</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- PAGE ACCUEIL -->
+    <div id="home" class="page active">
+        <section class="hero">
+            <h1>Trouvez un extra qualifié en <span class="highlight">24h</span></h1>
+            <p>La plateforme simple et rapide pour recruter du personnel en hôtellerie et restauration</p>
+            <div class="btn-group">
+                <button onclick="showPage('entreprise')" class="btn btn-primary">Je suis une entreprise</button>
+                <button onclick="showPage('extra')" class="btn btn-secondary">Je suis un extra</button>
+            </div>
+        </section>
+
+        <section class="how-it-works">
+            <div class="container">
+                <h2>Comment ça <span class="accent">marche</span> ?</h2>
+                <p class="section-subtitle">3 étapes simples</p>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h3>Publiez votre besoin</h3>
+                        <p>Créez une annonce en quelques minutes</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h3>Recevez des profils</h3>
+                        <p>Matching intelligent avec les meilleurs candidats</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h3>Validez et travaillez</h3>
+                        <p>Commencez immédiatement</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="stats">
+            <div class="container">
+                <h2>Nos <span class="accent">chiffres clés</span></h2>
+                <div class="stats-grid">
+                    <div class="stat">
+                        <div class="stat-number">5,000+</div>
+                        <div>Extras inscrits</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">1,200+</div>
+                        <div>Entreprises</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">15,000+</div>
+                        <div>Missions réalisées</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">4.8/5</div>
+                        <div>Satisfaction</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="testimonials">
+            <div class="container">
+                <h2>Ce que nos utilisateurs <span class="accent">disent</span></h2>
+                <div class="testimonials-grid">
+                    <div class="testimonial">
+                        <div class="testimonial-quote">"Recruté un serveur qualifié en moins de 24h !"</div>
+                        <div class="testimonial-author">
+                            <div class="author-avatar">MC</div>
+                            <div class="author-info"><h4>Marie Coq</h4><p>Restauratrice, Paris</p></div>
+                        </div>
+                    </div>
+                    <div class="testimonial">
+                        <div class="testimonial-quote">"Plateforme intuitive et paiement rapide !"</div>
+                        <div class="testimonial-author">
+                            <div class="author-avatar">JL</div>
+                            <div class="author-info"><h4>Jean Laurent</h4><p>Extra serveur, Lyon</p></div>
+                        </div>
+                    </div>
+                    <div class="testimonial">
+                        <div class="testimonial-quote">"Support réactif, processus simple !"</div>
+                        <div class="testimonial-author">
+                            <div class="author-avatar">SB</div>
+                            <div class="author-info"><h4>Sophie Bernard</h4><p>Directrice, Marseille</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="security">
+            <div class="container">
+                <h2>Garantie & <span class="accent">Sécurité</span></h2>
+                <div class="security-items">
+                    <div class="security-item">
+                        <div class="security-icon">✓</div>
+                        <h3>Profils vérifiés</h3>
+                        <p>Tous les extras vérifiés</p>
+                    </div>
+                    <div class="security-item">
+                        <div class="security-icon">🔒</div>
+                        <h3>Paiement sécurisé</h3>
+                        <p>Via Stripe à 100%</p>
+                    </div>
+                    <div class="security-item">
+                        <div class="security-icon">💬</div>
+                        <h3>Support 24/7</h3>
+                        <p>Toujours disponible</p>
+                    </div>
+                    <div class="security-item">
+                        <div class="security-icon">📋</div>
+                        <h3>Conforme légalement</h3>
+                        <p>RGPD, CGU, assurance</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta">
+            <h2>Prêt à démarrer ?</h2>
+            <p>Rejoignez des milliers de professionnels</p>
+            <div class="btn-group">
+                <button onclick="showPage('entreprise')" class="btn btn-secondary">Recruter un extra</button>
+                <button onclick="showPage('extra')" class="btn btn-secondary">Trouver une mission</button>
+            </div>
+        </section>
+    </div>
+
+    <!-- PAGE ENTREPRISES -->
+    <div id="entreprise" class="page">
+        <section class="hero" style="background: linear-gradient(135deg, #ff6b35 0%, #ffa94d 100%); min-height: 400px;">
+            <h1>Recruter facilement en hôtellerie & restauration</h1>
+            <p>Trouvez des extras qualifiés en moins de 24h</p>
+        </section>
+
+        <section>
+            <div class="container">
+                <h2>Nos <span class="accent">avantages</span></h2>
+                <div class="steps" style="margin-top: 3rem;">
+                    <div class="step">
+                        <div class="step-number">⚡</div>
+                        <h3>Gain de temps</h3>
+                        <p>Trouvez un extra qualifié en quelques heures seulement</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">👥</div>
+                        <h3>Personnel qualifié</h3>
+                        <p>Accédez à une base de talents pré-vérifiée</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">🎯</div>
+                        <h3>Flexibilité totale</h3>
+                        <p>Adaptez vos besoins en fonction de vos pics d'activité</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">✅</div>
+                        <h3>Simplicité administrative</h3>
+                        <p>Tout est géré automatiquement par notre plateforme</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section style="background: #f8f9fa;">
+            <div class="container">
+                <h2>Demander un extra en <span class="accent">3 étapes</span></h2>
+                <form style="max-width: 600px; margin: 3rem auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Type de mission</label>
+                        <select style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem;">
+                            <option>Serveur</option>
+                            <option>Cuisinier</option>
+                            <option>Barman</option>
+                            <option>Plongeur</option>
+                            <option>Hôtesse</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Date</label>
+                        <input type="date" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem;">
+                    </div>
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Lieu</label>
+                        <input type="text" placeholder="Votre adresse" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem;">
+                    </div>
+                    <div style="margin-bottom: 2rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Nombre d'extras</label>
+                        <input type="number" value="1" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem;">
+                    </div>
+                    <button type="button" class="btn btn-primary" style="width: 100; font-size: 1rem;">Demander un extra maintenant</button>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <!-- PAGE EXTRAS -->
+    <div id="extra" class="page">
+        <section class="hero" style="background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%); min-height: 400px;">
+            <h1>Trouvez des missions <span class="highlight">flexibles</span></h1>
+            <p>Gagnez de l'argent avec vos disponibilités</p>
+        </section>
+
+        <section>
+            <div class="container">
+                <h2>Pourquoi nous <span class="accent">choisir</span> ?</h2>
+                <div class="steps" style="margin-top: 3rem;">
+                    <div class="step">
+                        <div class="step-number">🕐</div>
+                        <h3>Liberté & flexibilité</h3>
+                        <p>Choisissez les missions et horaires qui vous conviennent</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">📋</div>
+                        <h3>Missions régulières</h3>
+                        <p>Accédez à des opportunités dans les meilleures restaurations</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">💰</div>
+                        <h3>Paiement rapide</h3>
+                        <p>Recevez vos revenus rapidement et facilement</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">⭐</div>
+                        <h3>Gagnez en réputation</h3>
+                        <p>Construisez votre profil professionnel</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section style="background: #f8f9fa;">
+            <div class="container">
+                <h2>S'inscrire en <span class="accent">3 étapes</span></h2>
+                <div class="steps" style="margin-top: 3rem;">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h3>Crée ton profil</h3>
+                        <p>Inscris-toi gratuitement et renseigne tes compétences</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h3>Postule aux missions</h3>
+                        <p>Découvre et postule aux missions qui te plaisent</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h3>Sois payé rapidement</h3>
+                        <p>Reçois tes revenus après chaque mission</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <div class="container" style="text-align: center;">
+                <h2>Prêt à commencer ?</h2>
+                <button class="btn btn-primary" style="margin-top: 2rem; padding: 1.2rem 3rem; font-size: 1.1rem;">Je m'inscris gratuitement</button>
+            </div>
+        </section>
+    </div>
+
+    <!-- PAGE FAQ -->
+    <div id="faq" class="page">
+        <section class="hero" style="background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%); min-height: 400px;">
+            <h1>Foire aux Questions</h1>
+            <p>Trouvez les réponses à vos questions</p>
+        </section>
+
+        <section>
+            <div class="container" style="max-width: 700px;">
+                <h2>Pour les <span class="accent">Entreprises</span></h2>
+                <div style="margin: 2rem 0;">
+                    <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Combien de temps pour trouver un extra ?</h3>
+                    <p>En général, moins de 24h. Notre plateforme fonctionne 24h/24 et notre communauté est très réactive.</p>
+                </div>
+                <div style="margin: 2rem 0;">
+                    <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Comment fonctionne le paiement ?</h3>
+                    <p>Le paiement se fait directement via notre plateforme sécurisée par Stripe. Vous payez uniquement après la mission.</p>
+                </div>
+                <div style="margin: 2rem 0;">
+                    <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Les extras sont-ils assurés ?</h3>
+                    <p>Oui, tous nos extras ont une assurance responsabilité civile professionnelle.</p>
+                </div>
+
+                <h2 style="margin-top: 3rem;">Pour les <span class="accent">Extras</span></h2>
+                <div style="margin: 2rem 0;">
+                    <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Quand suis-je payé ?</h3>
+                    <p>Vous êtes payé dans les 48h suivant la fin de votre mission.</p>
+                </div>
+                <div style="margin: 2rem 0;">
+                    <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Comment fonctionne la sélection ?</h3>
+                    <p>Les entreprises voient votre profil et choisissent les candidats. Vous pouvez aussi postuler directement aux missions.</p>
+                </div>
+                <div style="margin: 2rem 0;">
+                    <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Dois-je être auto-entrepreneur ?</h3>
+                    <p>Non, nous gérons tous les aspects administratifs et fiscaux pour vous.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>À Propos</h4>
+                <ul>
+                    <li><a href="#">Qui sommes-nous ?</a></li>
+                    <li><a href="#">Blog</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Pour les Extras</h4>
+                <ul>
+                    <li><a onclick="showPage('extra')">S'inscrire</a></li>
+                    <li><a onclick="showPage('faq')">FAQ</a></li>
+                    <li><a href="#">Centre d'aide</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Pour les Entreprises</h4>
+                <ul>
+                    <li><a onclick="showPage('entreprise')">Recruter</a></li>
+                    <li><a onclick="showPage('faq')">Questions</a></li>
+                    <li><a href="#">Tarifs</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Légal</h4>
+                <ul>
+                    <li><a href="#">Mentions légales</a></li>
+                    <li><a href="#">CGU</a></li>
+                    <li><a href="#">Confidentialité</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 Extra Now. Tous droits réservés. | Plateforme de mise en relation d'extras en hôtellerie & restauration</p>
+        </div>
+    </footer>
+
+    <script>
+        function showPage(pageId) {
+            // Masquer toutes les pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            // Afficher la page sélectionnée
+            document.getElementById(pageId).classList.add('active');
+            // Scroll vers le haut
+            window.scrollTo(0, 0);
+        }
+    </script>
+</body>
+</html>
