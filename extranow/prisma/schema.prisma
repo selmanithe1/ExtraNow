@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("CLIENT") // CLIENT, EXTRA, ADMIN
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  missions  Mission[]
+}
+
+model Extra {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  phone       String?
+  address     String?
+  city        String?
+  birthDate   DateTime?
+  skills      String   // Comma separated or JSON
+  experience  String?
+  bio         String?
+  cvUrl       String?
+  avatarUrl   String?
+  password    String?  // Hashé en production
+  rating      Float    @default(0)
+  status      String   @default("VERIFICATION") // ACTIF, VERIFICATION
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  applications Application[]
+}
+
+model Mission {
+  id          String   @id @default(cuid())
+  company     String
+  type        String   // Equiv to title/role
+  location    String
+  date        DateTime
+  amount      Float
+  status      String   @default("EN_ATTENTE") // EN_ATTENTE, CONFIRME, TERMINE
+  clientId    String?
+  client      User?    @relation(fields: [clientId], references: [id])
+  applications Application[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Application {
+  id        String   @id @default(cuid())
+  missionId String
+  extraId   String
+  status    String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  createdAt DateTime @default(now())
+  mission   Mission  @relation(fields: [missionId], references: [id])
+  extra     Extra    @relation(fields: [extraId], references: [id])
+}
