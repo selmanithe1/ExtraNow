@@ -1,24 +1,31 @@
 "use client";
 
 import { TrendingUp, Users, Zap, DollarSign, Check, X, Search, FileText, Download, Briefcase, MapPin, User as UserIcon } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { updateMissionStatus } from "@/app/actions";
+import { updateMissionStatus, getAdminData } from "@/app/actions";
 
 export default function AdminPage() {
     const [activeTab, setActiveTab] = useState("missions"); // "missions" or "extras"
-    const [missions, setMissions] = useState([
-        { id: "cm1", company: "Le Petit Nice", type: "Serveur", date: "Demain, 19:00", amount: "85 €", status: "EN_ATTENTE" },
-        { id: "cm2", company: "Hôtel Continental", type: "Barman", date: "Aujourd'hui, 21:00", amount: "120 €", status: "CONFIRME" },
-        { id: "cm3", company: "Bistro Volney", type: "Cuisinier", date: "15 Mars, 10:00", amount: "150 €", status: "EN_ATTENTE" },
-        { id: "cm4", company: "La Brasserie", type: "Plongeur", date: "16 Mars, 18:00", amount: "65 €", status: "EN_ATTENTE" },
-    ]);
+    const [missions, setMissions] = useState<any[]>([]);
+    const [extras, setExtras] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const [extras, setExtras] = useState([
-        { id: "e1", name: "Thomas L.", email: "thomas@extra.fr", city: "Marseille", skills: "Serveur Expert", status: "VERIFICATION", phone: "0601020304", avatarUrl: "" },
-        { id: "e2", name: "Sarah M.", email: "sarah@extra.fr", city: "Paris", skills: "Chef de rang", status: "ACTIF", phone: "0605060708", avatarUrl: "" },
-        { id: "e3", name: "Karim B.", email: "karim@extra.fr", city: "Lyon", skills: "Barman", status: "ACTIF", phone: "0609101112", avatarUrl: "" },
-    ]);
+    useEffect(() => {
+        // Fetch real data
+        const fetchData = async () => {
+            try {
+                const data = await getAdminData();
+                if (data.extras && data.extras.length > 0) setExtras(data.extras);
+                if (data.missions && data.missions.length > 0) setMissions(data.missions);
+            } catch (err) {
+                console.error("Fetch error");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
 
     const [search, setSearch] = useState("");
 
@@ -89,119 +96,135 @@ export default function AdminPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                <div className="lg:col-span-2 bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-sm">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-                        <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                            {activeTab === "missions" ? "Gestion des Missions" : "Gestion des Extras"}
-                        </h2>
-                        <div className="relative">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                            <input
-                                type="text"
-                                placeholder="Rechercher..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-6 text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all w-full md:w-80 font-medium"
-                            />
+                <div className="lg:col-span-2 bg-white rounded-[2.5rem] p-10 border border-slate-200 shadow-sm min-h-[500px] flex flex-col">
+                    {loading ? (
+                        <div className="flex-1 flex items-center justify-center">
+                            <div className="w-10 h-10 border-4 border-slate-200 border-t-orange-500 rounded-full animate-spin" />
                         </div>
-                    </div>
+                    ) : (
+                        <>
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                                    {activeTab === "missions" ? "Gestion des Missions" : "Gestion des Extras"}
+                                </h2>
+                                <div className="relative">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                                    <input
+                                        type="text"
+                                        placeholder="Rechercher..."
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        className="bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pl-12 pr-6 text-sm text-slate-900 focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all w-full md:w-80 font-medium"
+                                    />
+                                </div>
+                            </div>
 
-                    <div className="space-y-5">
-                        <AnimatePresence mode="popLayout">
-                            {activeTab === "missions" ? (
-                                filteredMissions.map((mission) => (
-                                    <motion.div
-                                        key={mission.id}
-                                        layout
-                                        initial={{ opacity: 0, scale: 0.95 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.95 }}
-                                        className="flex flex-col md:flex-row items-start md:items-center justify-between p-6 rounded-3xl border border-slate-100 hover:border-orange-200 hover:bg-orange-50/30 transition-all group gap-6"
-                                    >
-                                        <div className="flex items-center gap-5">
-                                            <div className="h-14 w-14 rounded-2xl bg-slate-900 flex items-center justify-center font-black text-white text-xl shadow-lg shrink-0">
-                                                {mission.company[0]}
-                                            </div>
-                                            <div>
-                                                <div className="font-black text-slate-900 group-hover:text-orange-600 transition-colors text-lg italic">{mission.company}</div>
-                                                <div className="text-sm font-bold text-slate-500 mt-0.5">{mission.type} • <span className="text-slate-400">{mission.date}</span></div>
-                                            </div>
-                                        </div>
+                            <div className="space-y-5">
+                                <AnimatePresence mode="popLayout">
+                                    {activeTab === "missions" ? (
+                                        filteredMissions.length > 0 ? (
+                                            filteredMissions.map((mission) => (
+                                                <motion.div
+                                                    key={mission.id}
+                                                    layout
+                                                    initial={{ opacity: 0, scale: 0.95 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    exit={{ opacity: 0, scale: 0.95 }}
+                                                    className="flex flex-col md:flex-row items-start md:items-center justify-between p-6 rounded-3xl border border-slate-100 hover:border-orange-200 hover:bg-orange-50/30 transition-all group gap-6"
+                                                >
+                                                    <div className="flex items-center gap-5">
+                                                        <div className="h-14 w-14 rounded-2xl bg-slate-900 flex items-center justify-center font-black text-white text-xl shadow-lg shrink-0">
+                                                            {mission.company[0]}
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-black text-slate-900 group-hover:text-orange-600 transition-colors text-lg italic">{mission.company}</div>
+                                                            <div className="text-sm font-bold text-slate-500 mt-0.5">{mission.type} • <span className="text-slate-400">{new Date(mission.date).toLocaleDateString('fr-FR')}</span></div>
+                                                        </div>
+                                                    </div>
 
-                                        <div className="flex items-center gap-8 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-4 md:pt-0">
-                                            <div className="text-right">
-                                                <div className="font-black text-slate-900 text-xl tracking-tight">{mission.amount}</div>
-                                                <div className={`text-[10px] font-black uppercase tracking-[0.2em] mt-1 ${mission.status === "CONFIRME" ? "text-emerald-600" :
-                                                        mission.status === "REJETE" ? "text-red-600" : "text-orange-500"
-                                                    }`}>
-                                                    {mission.status.replace("_", " ")}
-                                                </div>
-                                            </div>
+                                                    <div className="flex items-center gap-8 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-4 md:pt-0">
+                                                        <div className="text-right">
+                                                            <div className="font-black text-slate-900 text-xl tracking-tight">{mission.amount}</div>
+                                                            <div className={`text-[10px] font-black uppercase tracking-[0.2em] mt-1 ${mission.status === "CONFIRME" ? "text-emerald-600" :
+                                                                mission.status === "REJETE" ? "text-red-600" : "text-orange-500"
+                                                                }`}>
+                                                                {mission.status.replace("_", " ")}
+                                                            </div>
+                                                        </div>
 
-                                            {mission.status === "EN_ATTENTE" && (
-                                                <div className="flex gap-3">
-                                                    <button
-                                                        onClick={() => updateStatus(mission.id, "CONFIRME")}
-                                                        className="p-3.5 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-500/20 transition-all active:scale-90"
-                                                    >
-                                                        <Check size={22} strokeWidth={4} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => updateStatus(mission.id, "REJETE")}
-                                                        className="p-3.5 rounded-2xl bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-500/20 transition-all active:scale-90"
-                                                    >
-                                                        <X size={22} strokeWidth={4} />
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </motion.div>
-                                ))
-                            ) : (
-                                filteredExtras.map((extra) => (
-                                    <motion.div
-                                        key={extra.id}
-                                        layout
-                                        initial={{ opacity: 0, scale: 0.95 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.95 }}
-                                        className="flex flex-col md:flex-row items-start md:items-center justify-between p-6 rounded-3xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all group gap-6"
-                                    >
-                                        <div className="flex items-center gap-5">
-                                            <div className="h-14 w-14 rounded-2xl bg-slate-50 flex items-center justify-center font-black text-slate-400 text-xl border-2 border-dashed border-slate-200 overflow-hidden shrink-0">
-                                                {extra.avatarUrl ? (
-                                                    <img src={extra.avatarUrl} className="w-full h-full object-cover" alt="User" />
-                                                ) : <UserIcon size={24} />}
-                                            </div>
-                                            <div>
-                                                <div className="font-black text-slate-900 group-hover:text-blue-600 transition-colors text-lg italic">{extra.name}</div>
-                                                <div className="text-sm font-bold text-slate-500 mt-0.5">{extra.skills} • <span className="text-slate-400">{extra.city}</span></div>
-                                            </div>
-                                        </div>
+                                                        {mission.status === "EN_ATTENTE" && (
+                                                            <div className="flex gap-3">
+                                                                <button
+                                                                    onClick={() => updateStatus(mission.id, "CONFIRME")}
+                                                                    className="p-3.5 rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-500/20 transition-all active:scale-90"
+                                                                >
+                                                                    <Check size={22} strokeWidth={4} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => updateStatus(mission.id, "REJETE")}
+                                                                    className="p-3.5 rounded-2xl bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-500/20 transition-all active:scale-90"
+                                                                >
+                                                                    <X size={22} strokeWidth={4} />
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </motion.div>
+                                            ))
+                                        ) : (
+                                            <div className="text-center py-20 text-slate-400 font-bold italic">Aucune mission trouvée</div>
+                                        )
+                                    ) : (
+                                        filteredExtras.length > 0 ? (
+                                            filteredExtras.map((extra) => (
+                                                <motion.div
+                                                    key={extra.id}
+                                                    layout
+                                                    initial={{ opacity: 0, scale: 0.95 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    exit={{ opacity: 0, scale: 0.95 }}
+                                                    className="flex flex-col md:flex-row items-start md:items-center justify-between p-6 rounded-3xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all group gap-6"
+                                                >
+                                                    <div className="flex items-center gap-5">
+                                                        <div className="h-14 w-14 rounded-2xl bg-slate-50 flex items-center justify-center font-black text-slate-400 text-xl border-2 border-dashed border-slate-200 overflow-hidden shrink-0">
+                                                            {extra.avatarUrl && extra.avatarUrl !== "simulated_avatar_url" ? (
+                                                                <img src={extra.avatarUrl} className="w-full h-full object-cover" alt="User" />
+                                                            ) : <UserIcon size={24} />}
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-black text-slate-900 group-hover:text-blue-600 transition-colors text-lg italic">{extra.name}</div>
+                                                            <div className="text-sm font-bold text-slate-500 mt-0.5">{extra.skills} • <span className="text-slate-400">{extra.city}</span></div>
+                                                        </div>
+                                                    </div>
 
-                                        <div className="flex items-center gap-8 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-4 md:pt-0">
-                                            <div className="text-right">
-                                                <div className="font-black text-slate-900 text-base tracking-tight">{extra.phone}</div>
-                                                <div className={`text-[10px] font-black uppercase tracking-[0.2em] mt-1 ${extra.status === "ACTIF" ? "text-emerald-600" : "text-orange-500"
-                                                    }`}>
-                                                    {extra.status}
-                                                </div>
-                                            </div>
+                                                    <div className="flex items-center gap-8 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-4 md:pt-0">
+                                                        <div className="text-right">
+                                                            <div className="font-black text-slate-900 text-base tracking-tight">{extra.phone}</div>
+                                                            <div className={`text-[10px] font-black uppercase tracking-[0.2em] mt-1 ${extra.status === "ACTIF" ? "text-emerald-600" : "text-orange-500"
+                                                                }`}>
+                                                                {extra.status}
+                                                            </div>
+                                                        </div>
 
-                                            <div className="flex gap-3">
-                                                <button className="p-3.5 rounded-2xl bg-slate-900 text-white hover:bg-slate-800 shadow-lg transition-all active:scale-90" title="Voir Fiche PDF">
-                                                    <FileText size={22} strokeWidth={2.5} />
-                                                </button>
-                                                <button className="p-3.5 rounded-2xl bg-blue-100 text-blue-600 hover:bg-blue-200 transition-all active:scale-90" title="Voir CV Original">
-                                                    <Download size={22} strokeWidth={2.5} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                ))
-                            )}
-                        </AnimatePresence>
-                    </div>
+                                                        <div className="flex gap-3">
+                                                            <button className="p-3.5 rounded-2xl bg-slate-900 text-white hover:bg-slate-800 shadow-lg transition-all active:scale-90" title="Voir Fiche PDF">
+                                                                <FileText size={22} strokeWidth={2.5} />
+                                                            </button>
+                                                            <button className="p-3.5 rounded-2xl bg-blue-100 text-blue-600 hover:bg-blue-200 transition-all active:scale-90" title="Voir CV Original">
+                                                                <Download size={22} strokeWidth={2.5} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            ))
+                                        ) : (
+                                            <div className="text-center py-20 text-slate-400 font-bold italic">Aucun candidat trouvé</div>
+                                        )
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 {/* Action Panel */}

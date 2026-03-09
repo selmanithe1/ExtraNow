@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import {
     TrendingUp,
     Clock,
@@ -26,6 +27,7 @@ import {
     Area
 } from "recharts";
 import Link from "next/link";
+import { getLatestExtra } from "@/app/actions";
 
 const data = [
     { name: "Lun", revenue: 85, hours: 7 },
@@ -38,6 +40,12 @@ const data = [
 ];
 
 export default function ExtraDashboardPage() {
+    const [extra, setExtra] = useState<any>(null);
+
+    useEffect(() => {
+        getLatestExtra().then(setExtra);
+    }, []);
+
     return (
         <div className="space-y-10 pb-10">
             {/* Dynamic Summary Cards */}
@@ -76,8 +84,10 @@ export default function ExtraDashboardPage() {
                         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[80px]" />
                         <div className="flex items-center justify-between mb-12 relative z-10">
                             <div>
-                                <h2 className="text-2xl font-black text-slate-900 italic tracking-tight">Performance Financière</h2>
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Evolution des revenus quotidiens (EUR)</p>
+                                <h2 className="text-2xl font-black text-slate-900 italic tracking-tight">
+                                    Hello, {extra?.name?.split(' ')[0] || "Extra"} !
+                                </h2>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Ton aperçu de performance aujourd'hui</p>
                             </div>
                             <button className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-orange-500 transition-all active:scale-95 shadow-lg shadow-slate-900/10">
                                 Exporter Données

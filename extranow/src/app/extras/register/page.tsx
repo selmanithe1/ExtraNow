@@ -54,12 +54,16 @@ export default function ExtraRegistrationPage() {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPreviews(p => ({ ...p, avatar: reader.result as string }));
-                setFormData(f => ({ ...f, avatarUrl: "simulated_avatar_url" }));
+                setFormData(f => ({ ...f, avatarUrl: reader.result as string }));
             };
             reader.readAsDataURL(file);
         } else {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFormData(f => ({ ...f, cvUrl: reader.result as string }));
+            };
+            reader.readAsDataURL(file);
             setPreviews(p => ({ ...p, cvName: file.name }));
-            setFormData(f => ({ ...f, cvUrl: "simulated_cv_url" }));
         }
     };
 
@@ -85,38 +89,73 @@ export default function ExtraRegistrationPage() {
     };
 
     const downloadPDF = async () => {
-        if (!resumeRef.current) return;
-
-        const element = resumeRef.current;
-        // Optimization: Ensure the element is visible during capture and has standard colors
-        const canvas = await html2canvas(element, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: "#ffffff",
-            logging: false,
-            onclone: (clonedDoc) => {
-                const el = clonedDoc.querySelector('[data-pdf-content]');
-                if (el) {
-                    (el as HTMLElement).style.display = 'block';
-                    // Force standard colors to avoid 'lab' parsing errors in html2canvas
-                    const allElements = el.querySelectorAll('*');
-                    allElements.forEach(node => {
-                        const style = window.getComputedStyle(node);
-                        if (style.color && (style.color.includes('lab') || style.color.includes('oklch'))) {
-                            (node as HTMLElement).style.color = '#000000';
-                        }
-                    });
-                }
+        try {
+            console.log("Starting PDF generation...");
+            if (!resumeRef.current) {
+                console.error("resumeRef.current is null");
+                return;
             }
-        });
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF("p", "mm", "a4");
-        const imgProps = pdf.getImageProperties(imgData);
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`ExtraNow_Profil_${formData.name.replace(/\s+/g, "_")}.pdf`);
+            const element = resumeRef.current;
+            console.log("Capturing element:", element);
+
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: "#ffffff",
+                logging: true, // Enable logging for debugging
+                onclone: (clonedDoc) => {
+                    const el = clonedDoc.querySelector('[data-pdf-content]');
+                    if (el) {
+                        (el as HTMLElement).style.display = 'block';
+                        (el as HTMLElement).style.visibility = 'visible';
+                        // Strip all global styles and inject basic ones to avoid "lab" color error
+                        clonedDoc.head.innerHTML = `
+                            <style>
+                                * { color: #000 !important; font-family: Arial, sans-serif !important; margin: 0; padding: 0; box-sizing: border-box; }
+                                [data-pdf-content] { background: white !important; width: 210mm !important; padding: 40px !important; display: block !important; visibility: visible !important; }
+                                .flex { display: flex !important; }
+                                .justify-between { justify-content: space-between !important; }
+                                .items-start { align-items: flex-start !important; }
+                                .grid-cols-2 { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 40px !important; }
+                                .border-orange-500 { border-color: #ff6b35 !important; }
+                                .border-b-2 { border-bottom: 2px solid !important; }
+                                .text-orange-500 { color: #ff6b35 !important; }
+                                .text-slate-900 { color: #0f172a !important; }
+                                .text-slate-600 { color: #475569 !important; }
+                                .text-slate-500 { color: #64748b !important; }
+                                .text-slate-400 { color: #94a3b8 !important; }
+                                .bg-slate-50 { background-color: #f8fafc !important; }
+                                .rounded-2xl { border-radius: 16px !important; }
+                                .w-24 { width: 96px !important; }
+                                .h-24 { height: 96px !important; }
+                                .font-black { font-weight: 900 !important; }
+                                .uppercase { text-transform: uppercase !important; }
+                                .italic { font-style: italic !important; }
+                                .border-l-4 { border-left: 4px solid !important; }
+                                .pl-4 { padding-left: 16px !important; }
+                                .space-y-6 > * + * { margin-top: 24px !important; }
+                                .space-y-3 > * + * { margin-top: 12px !important; }
+                            </style>
+                        `;
+                    }
+                }
+            });
+
+            console.log("Canvas created successfully");
+            const imgData = canvas.toDataURL("image/png");
+            const pdf = new jsPDF("p", "mm", "a4");
+            const imgProps = pdf.getImageProperties(imgData);
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+            pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`ExtraNow_Profil_${formData.name.replace(/\s+/g, "_")}.pdf`);
+            console.log("PDF saved successfully");
+        } catch (err) {
+            console.error("PDF download error:", err);
+            alert("Erreur lors de la génération du PDF. Veuillez réessayer.");
+        }
     };
 
     if (isSuccess) {
@@ -133,12 +172,14 @@ export default function ExtraRegistrationPage() {
                     <h1 className="text-4xl font-black text-slate-900 mb-4 italic">Inscription Réussie !</h1>
                     <p className="text-slate-500 font-bold mb-10 text-lg">Votre dossier complet (Photo + CV) a été transmis. Vous pouvez télécharger votre fiche récapitulative.</p>
 
-                    {/* Hidden Preview for PDF */}
-                    <div className="hidden">
+                    {/* Hidden Preview for PDF (Off-screen) */}
+                    <div style={{ position: 'absolute', left: '-9999px', top: '0', zIndex: -1 }}>
                         <div ref={resumeRef} data-pdf-content className="p-10 bg-white w-[210mm] text-slate-900 font-sans" style={{ color: '#0f172a' }}>
                             <div className="flex justify-between items-start border-b-2 border-orange-500 pb-8 mb-8">
                                 <div className="flex gap-6">
-                                    {previews.avatar ? (
+                                    {formData.avatarUrl && formData.avatarUrl !== "simulated_avatar_url" ? (
+                                        <img src={formData.avatarUrl} className="w-24 h-24 rounded-2xl object-cover border-2 border-orange-500" alt="Avatar" />
+                                    ) : previews.avatar ? (
                                         <img src={previews.avatar} className="w-24 h-24 rounded-2xl object-cover border-2 border-orange-500" alt="Avatar" />
                                     ) : (
                                         <div className="w-24 h-24 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-300">

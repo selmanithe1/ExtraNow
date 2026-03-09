@@ -166,7 +166,7 @@ export default function LandingPage() {
               <h2 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tighter">Prêt pour demain ?</h2>
               <p className="text-white/80 font-bold text-lg md:text-xl max-w-lg">Rejoignez la communauté de restauration la plus dynamique de France.</p>
             </div>
-            <Link href="/login" className="bg-[#0f172a] text-white px-12 py-6 rounded-3xl font-black text-xl hover:bg-slate-800 transition-all shadow-xl active:scale-95 uppercase tracking-widest relative z-10">
+            <Link href="/extras/register" className="bg-[#0f172a] text-white px-12 py-6 rounded-3xl font-black text-xl hover:bg-slate-800 transition-all shadow-xl active:scale-95 uppercase tracking-widest relative z-10">
               Démarrer
             </Link>
           </div>

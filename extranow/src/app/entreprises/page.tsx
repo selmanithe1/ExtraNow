@@ -1,10 +1,41 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Building2, CheckCircle2, Users, Rocket } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Building2, CheckCircle2, Users, Rocket, X, Send, MapPin, Calendar, DollarSign, Briefcase } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
+import { createMission } from "@/app/actions";
 
 export default function EntreprisesPage() {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
+    const [formData, setFormData] = useState({
+        company: "",
+        type: "",
+        location: "",
+        date: "",
+        amount: ""
+    });
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        const result = await createMission({
+            ...formData,
+            amount: parseFloat(formData.amount)
+        });
+        if (result.success) {
+            setIsSuccess(true);
+            setTimeout(() => {
+                setIsModalOpen(false);
+                setIsSuccess(false);
+                setFormData({ company: "", type: "", location: "", date: "", amount: "" });
+            }, 3000);
+        }
+        setIsSubmitting(false);
+    };
+
     return (
         <div className="min-h-screen bg-white">
             {/* Simple Header for navigation back */}
@@ -68,11 +99,132 @@ export default function EntreprisesPage() {
                 <div className="mt-20 bg-[#101e33] rounded-[3rem] p-16 text-center text-white relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 blur-[100px]" />
                     <h2 className="text-4xl font-black mb-6 relative z-10">Prêt à booster votre service ?</h2>
-                    <button className="bg-orange-500 hover:bg-orange-600 text-white font-black px-10 py-5 rounded-2xl transition-all shadow-xl shadow-orange-500/20 active:scale-95 text-lg relative z-10">
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="bg-orange-500 hover:bg-orange-600 text-white font-black px-10 py-5 rounded-2xl transition-all shadow-xl shadow-orange-500/20 active:scale-95 text-lg relative z-10"
+                    >
                         DÉPOSER UNE ANNONCE
                     </button>
                 </div>
             </main>
+
+            {/* Modal Form */}
+            <AnimatePresence>
+                {isModalOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsModalOpen(false)}
+                            className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="bg-white w-full max-w-xl rounded-[3rem] p-12 relative z-10 shadow-2xl overflow-hidden"
+                        >
+                            {isSuccess ? (
+                                <div className="text-center py-10">
+                                    <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                                        <CheckCircle2 size={40} />
+                                    </div>
+                                    <h2 className="text-3xl font-black text-slate-900 mb-2 italic">Mission Publiée !</h2>
+                                    <p className="text-slate-500 font-bold">Votre demande est en cours de validation par nos équipes.</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="flex justify-between items-center mb-8">
+                                        <h2 className="text-3xl font-black text-slate-900 tracking-tight italic">Nouvelle <span className="text-orange-500">Annonce</span></h2>
+                                        <button onClick={() => setIsModalOpen(false)} className="text-slate-300 hover:text-slate-900 transition-colors">
+                                            <X size={24} strokeWidth={3} />
+                                        </button>
+                                    </div>
+
+                                    <form onSubmit={handleSubmit} className="space-y-6">
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div className="col-span-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block ml-1">Établissement</label>
+                                                <div className="relative">
+                                                    <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                                                    <input
+                                                        required
+                                                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 font-bold focus:outline-none focus:border-orange-500 transition-all"
+                                                        placeholder="Nom de l'hôtel/restaurant"
+                                                        value={formData.company}
+                                                        onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block ml-1">Type de Poste</label>
+                                                <div className="relative">
+                                                    <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                                                    <input
+                                                        required
+                                                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 font-bold focus:outline-none focus:border-orange-500 transition-all"
+                                                        placeholder="Ex: Chef de Rang, Barman..."
+                                                        value={formData.type}
+                                                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block ml-1">Ville</label>
+                                                <div className="relative">
+                                                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                                                    <input
+                                                        required
+                                                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 font-bold focus:outline-none focus:border-orange-500 transition-all"
+                                                        placeholder="Paris"
+                                                        value={formData.location}
+                                                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block ml-1">Date</label>
+                                                <div className="relative">
+                                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                                                    <input
+                                                        required
+                                                        type="date"
+                                                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 font-bold focus:outline-none focus:border-orange-500 transition-all"
+                                                        value={formData.date}
+                                                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block ml-1">Rémunération (€)</label>
+                                                <div className="relative">
+                                                    <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                                                    <input
+                                                        required
+                                                        type="number"
+                                                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 font-bold focus:outline-none focus:border-orange-500 transition-all"
+                                                        placeholder="150"
+                                                        value={formData.amount}
+                                                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            disabled={isSubmitting}
+                                            className="w-full bg-[#0f172a] text-white py-5 rounded-2xl font-black text-lg flex items-center justify-center gap-3 hover:bg-orange-500 transition-all shadow-xl active:scale-95 uppercase tracking-widest mt-4"
+                                        >
+                                            {isSubmitting ? "Envoi..." : "Publier l'Annonce"} <Send size={20} strokeWidth={3} />
+                                        </button>
+                                    </form>
+                                </>
+                            )}
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

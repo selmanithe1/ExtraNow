@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
+import { getLatestExtra } from "@/app/actions";
 
 export default function ExtraLayout({
     children,
@@ -22,6 +24,11 @@ export default function ExtraLayout({
     children: React.ReactNode;
 }) {
     const pathname = usePathname();
+    const [extra, setExtra] = useState<any>(null);
+
+    useEffect(() => {
+        getLatestExtra().then(setExtra);
+    }, []);
 
     const menuItems = [
         { label: "Tableau de bord", icon: BarChart3, href: "/extras/dashboard" },
@@ -63,15 +70,20 @@ export default function ExtraLayout({
                 <div className="mt-auto space-y-4">
                     <div className="bg-white/5 rounded-3xl p-6 border border-white/5">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center font-black relative overflow-hidden group">
-                                <span className="text-white">TL</span>
-                                {/* User avatar overlay if it existed */}
+                            <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center font-black relative overflow-hidden group border border-white/10">
+                                {extra?.avatarUrl && extra.avatarUrl !== "simulated_avatar_url" ? (
+                                    <img src={extra.avatarUrl} className="w-full h-full object-cover" alt="Profile" />
+                                ) : (
+                                    <span className="text-white">
+                                        {extra?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || "EX"}
+                                    </span>
+                                )}
                                 <div className="absolute inset-0 bg-slate-800 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                     <User size={14} />
                                 </div>
                             </div>
                             <div>
-                                <p className="text-xs font-black">Thomas L.</p>
+                                <p className="text-xs font-black truncate max-w-[120px]">{extra?.name || "Chargement..."}</p>
                                 <p className="text-[10px] text-slate-500 font-bold">Extra Premium</p>
                             </div>
                         </div>

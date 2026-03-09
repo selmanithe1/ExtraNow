@@ -72,3 +72,70 @@ export async function registerExtra(data: {
         return { success: false, error: errorMessage };
     }
 }
+
+export async function getLatestExtra() {
+    try {
+        const latestExtra = await prisma.extra.findFirst({
+            orderBy: { createdAt: 'desc' }
+        });
+        return latestExtra;
+    } catch (error) {
+        console.error("Failed to fetch latest extra:", error);
+        return null;
+    }
+}
+
+export async function getAdminData() {
+    try {
+        const extras = await prisma.extra.findMany({
+            orderBy: { createdAt: 'desc' }
+        });
+        const missions = await prisma.mission.findMany({
+            orderBy: { createdAt: 'desc' }
+        });
+        return { extras, missions };
+    } catch (error) {
+        console.error("Failed to fetch admin data:", error);
+        return { extras: [], missions: [] };
+    }
+}
+
+export async function createMission(data: {
+    company: string;
+    type: string;
+    location: string;
+    date: string;
+    amount: number;
+}) {
+    try {
+        const mission = await prisma.mission.create({
+            data: {
+                ...data,
+                date: new Date(data.date),
+                status: "EN_ATTENTE"
+            }
+        });
+        revalidatePath("/admin");
+        return { success: true, mission };
+    } catch (error) {
+        console.error("Failed to create mission:", error);
+        return { success: false, error: "Database error" };
+    }
+}
+
+export async function getAvailableMissions() {
+    try {
+        const missions = await prisma.mission.findMany({
+            where: {
+                status: "EN_ATTENTE"
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
+        return missions;
+    } catch (error) {
+        console.error("Failed to fetch available missions:", error);
+        return [];
+    }
+}
