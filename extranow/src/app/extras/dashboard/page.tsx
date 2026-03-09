@@ -1,20 +1,22 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
 import {
+    Briefcase,
+    Zap,
     TrendingUp,
     Clock,
+    CheckCircle2,
+    Search,
+    MapPin,
     DollarSign,
-    Zap,
-    ArrowUpRight,
+    ChevronRight,
     Star,
     Trophy,
-    Target,
-    ChevronRight,
     MessageCircle,
-    Briefcase
+    ArrowUpRight
 } from "lucide-react";
+import { useState, useEffect } from "react";
 import {
     BarChart,
     Bar,
@@ -27,9 +29,9 @@ import {
     Area
 } from "recharts";
 import Link from "next/link";
-import { getLatestExtra } from "@/app/actions";
+import { getStats, getAvailableMissions, getLatestExtra } from "@/app/actions";
 
-const data = [
+const chartData = [
     { name: "Lun", revenue: 85, hours: 7 },
     { name: "Mar", revenue: 120, hours: 8 },
     { name: "Mer", revenue: 0, hours: 0 },
@@ -40,22 +42,41 @@ const data = [
 ];
 
 export default function ExtraDashboardPage() {
+    const [stats, setStats] = useState<any>(null);
+    const [missions, setMissions] = useState<any[]>([]);
     const [extra, setExtra] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getLatestExtra().then(setExtra);
+        const load = async () => {
+            try {
+                const [s, m, e] = await Promise.all([
+                    getStats(),
+                    getAvailableMissions(),
+                    getLatestExtra()
+                ]);
+                setStats(s);
+                setMissions(m.slice(0, 3));
+                setExtra(e);
+            } finally {
+                setLoading(false);
+            }
+        };
+        load();
     }, []);
+
+    const dynamicStats = [
+        { label: "Revenu Hebdo", value: stats?.revenue || "850.50 €", icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50", change: "+12.5%" },
+        { label: "Heures ce mois", value: "124h", icon: Clock, color: "text-blue-600", bg: "bg-blue-50", change: "Objectif: 150h" },
+        { label: "Score Qualité", value: stats?.satisfaction || "4.9/5", icon: Star, color: "text-orange-600", bg: "bg-orange-50", change: "Rang: Expert" },
+        { label: "Missions Actives", value: stats?.activeMissions || "0", icon: Zap, color: "text-indigo-600", bg: "bg-indigo-50", change: "Live" },
+    ];
 
     return (
         <div className="space-y-10 pb-10">
             {/* Dynamic Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                    { label: "Revenu Hebdo", value: "850.50 €", icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50", change: "+12.5%" },
-                    { label: "Heures ce mois", value: "124h", icon: Clock, color: "text-blue-600", bg: "bg-blue-50", change: "Ojectif: 150h" },
-                    { label: "Score Qualité", value: "4.9/5", icon: Star, color: "text-orange-600", bg: "bg-orange-50", change: "Rang: Expert" },
-                    { label: "Commissions", value: "85 €", icon: TrendingUp, color: "text-indigo-600", bg: "bg-indigo-50", change: "-2% ce mois" },
-                ].map((stat, i) => (
+                {dynamicStats.map((stat, i) => (
                     <motion.div
                         key={i}
                         initial={{ opacity: 0, y: 20 }}
@@ -78,7 +99,6 @@ export default function ExtraDashboardPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                {/* Main Graph (Revenue Breakdown) */}
                 <div className="lg:col-span-2 space-y-10">
                     <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[80px]" />
@@ -96,7 +116,7 @@ export default function ExtraDashboardPage() {
 
                         <div className="h-[350px] w-full relative z-10">
                             <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={data}>
+                                <AreaChart data={chartData}>
                                     <defs>
                                         <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="#10b981" stopOpacity={0.1} />
@@ -139,7 +159,6 @@ export default function ExtraDashboardPage() {
                         </div>
                     </div>
 
-                    {/* Quick Missions Feed */}
                     <div className="bg-white rounded-[3rem] p-10 border border-slate-200 shadow-sm relative overflow-hidden">
                         <div className="flex items-center justify-between mb-10">
                             <h2 className="text-2xl font-black text-slate-900 italic tracking-tight">Missions à venir</h2>
@@ -149,10 +168,7 @@ export default function ExtraDashboardPage() {
                         </div>
 
                         <div className="space-y-4">
-                            {[
-                                { company: "Le Meurice", type: "Chef de rang", date: "Demain, 11:00", amount: "150 €", status: "CONFIRMÉ", color: "text-emerald-500", bg: "bg-emerald-50" },
-                                { company: "L'Avenue", type: "Barman", date: "15 Mars, 21:00", amount: "120 €", status: "EN ATTENTE", color: "text-orange-500", bg: "bg-orange-50" },
-                            ].map((mission, idx) => (
+                            {missions.length > 0 ? missions.map((mission, idx) => (
                                 <div key={idx} className="flex items-center justify-between p-6 rounded-[2rem] border border-slate-50 hover:bg-slate-50/50 transition-all group">
                                     <div className="flex items-center gap-6">
                                         <div className="w-14 h-14 bg-slate-900 rounded-2xl flex items-center justify-center font-black text-white text-xl">
@@ -160,22 +176,23 @@ export default function ExtraDashboardPage() {
                                         </div>
                                         <div>
                                             <p className="font-black text-slate-900 italic group-hover:text-orange-500 transition-colors uppercase tracking-tight">{mission.company}</p>
-                                            <p className="text-xs font-bold text-slate-400 mt-0.5">{mission.type} • {mission.date}</p>
+                                            <p className="text-xs font-bold text-slate-400 mt-0.5">{mission.type} • {new Date(mission.date).toLocaleDateString()}</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-xl font-black text-slate-900 tracking-tighter">{mission.amount}</p>
-                                        <p className={`text-[9px] font-black uppercase tracking-widest mt-1 ${mission.color}`}>
+                                        <p className={`text-[9px] font-black uppercase tracking-widest mt-1 ${mission.status === 'CONFIRME' ? 'text-emerald-500' : 'text-orange-500'}`}>
                                             {mission.status}
                                         </p>
                                     </div>
                                 </div>
-                            ))}
+                            )) : (
+                                <div className="text-center py-10 text-slate-300 font-black italic">Aucune mission à venir</div>
+                            )}
                         </div>
                     </div>
                 </div>
 
-                {/* Action Panel / Rewards */}
                 <div className="space-y-10">
                     <div className="bg-orange-500 rounded-[3rem] p-10 text-white shadow-2xl shadow-orange-500/30 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-[40px] -mr-10 -mt-10 group-hover:scale-110 transition-transform" />
@@ -187,9 +204,9 @@ export default function ExtraDashboardPage() {
                             <p className="text-white/70 font-bold text-xs uppercase tracking-widest mb-10 leading-relaxed">
                                 Réalise 3 missions "Expert" pour débloquer +15% de revenus.
                             </p>
-                            <div className="bg-white text-orange-500 rounded-2xl py-4 font-black uppercase tracking-widest text-[10px] shadow-xl active:scale-95 transition-all cursor-pointer">
+                            <Link href="/extras/defi" className="block bg-white text-orange-500 rounded-2xl py-4 font-black uppercase tracking-widest text-[10px] shadow-xl active:scale-95 transition-all text-center">
                                 Voir les détails
-                            </div>
+                            </Link>
                         </div>
                     </div>
 
@@ -220,26 +237,25 @@ export default function ExtraDashboardPage() {
                         </div>
                     </div>
 
-                    {/* Live Message Preview */}
                     <div className="bg-[#101e33] rounded-[3rem] p-10 text-white shadow-xl relative overflow-hidden group">
                         <div className="absolute top-[-20%] left-[-20%] w-64 h-64 bg-blue-500/10 rounded-full blur-[80px]" />
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-orange-500">
-                                <MessageCircle size={24} strokeWidth={2.5} />
+                        <Link href="/extras/messages" className="block group/link">
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-orange-500">
+                                    <MessageCircle size={24} strokeWidth={2.5} />
+                                </div>
+                                <div>
+                                    <p className="font-black italic">Messages Flash</p>
+                                    <p className="text-[8px] font-black text-white/30 uppercase tracking-[0.3em] mt-0.5">2 Nouveaux</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="font-black italic">Messages Flash</p>
-                                <p className="text-[8px] font-black text-white/30 uppercase tracking-[0.3em] mt-0.5">2 Nouveaux</p>
+                            <div className="bg-white/5 rounded-2xl p-4 border border-white/10 mb-6 font-black text-xs hover:bg-white/10 transition-colors">
+                                Messagerie connectée & live. Cliquez pour voir.
                             </div>
-                        </div>
-                        <div className="bg-white/5 rounded-2xl p-4 border border-white/10 mb-6">
-                            <p className="text-xs font-bold leading-relaxed">
-                                <span className="text-orange-500">Mama Shelter :</span> "On a adoré votre service hier ! Repassez quand vous voulez !"
-                            </p>
-                        </div>
-                        <button className="w-full text-[10px] font-black uppercase tracking-widest text-center py-2 text-white/50 hover:text-white transition-colors">
+                        </Link>
+                        <Link href="/extras/messages" className="block w-full text-[10px] font-black uppercase tracking-widest text-center py-2 text-white/50 hover:text-white transition-colors">
                             Ouvrir la messagerie
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </div>

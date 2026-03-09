@@ -10,22 +10,39 @@ import {
     ArrowRight,
     Filter,
     Search,
-    ShieldCheck
+    ShieldCheck,
+    CheckCircle2
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getAvailableMissions } from "@/app/actions";
+import { getAvailableMissions, applyToMission } from "@/app/actions";
+import { HOSPITALITY_ROLES } from "@/app/data";
 
 export default function MissionsMarketplace() {
     const [missions, setMissions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [activeCategory, setActiveCategory] = useState("Tous");
+    const [submittingId, setSubmittingId] = useState<string | null>(null);
+    const [appliedIds, setAppliedIds] = useState<string[]>([]);
 
     useEffect(() => {
         getAvailableMissions().then(data => {
             setMissions(data);
-            setLoading(false);
+            setLoading(true); // Small delay simulation
+            setTimeout(() => setLoading(false), 500);
         });
     }, []);
+
+    const categories = ["Tous", ...HOSPITALITY_ROLES.slice(0, 5)];
+
+    const handleApply = async (missionId: string) => {
+        setSubmittingId(missionId);
+        const result = await applyToMission(missionId);
+        if (result.success) {
+            setAppliedIds(prev => [...prev, missionId]);
+        }
+        setSubmittingId(null);
+    };
 
     const filteredMissions = missions.filter(m =>
         m.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -101,8 +118,20 @@ export default function MissionsMarketplace() {
                                 </div>
                             </div>
 
-                            <button className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 group-hover:bg-orange-500 transition-all active:scale-95">
-                                Postuler <ArrowRight size={18} strokeWidth={3} />
+                            <button
+                                onClick={() => handleApply(mission.id)}
+                                disabled={appliedIds.includes(mission.id) || submittingId === mission.id}
+                                className={`w-full py-5 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all active:scale-95 ${appliedIds.includes(mission.id)
+                                    ? "bg-emerald-500 text-white cursor-default"
+                                    : "bg-slate-900 text-white hover:bg-orange-500"
+                                    }`}
+                            >
+                                {submittingId === mission.id ? "Envoi..." :
+                                    appliedIds.includes(mission.id) ? (
+                                        <>Candidature Envoyée <CheckCircle2 size={18} /></>
+                                    ) : (
+                                        <>Postuler <ArrowRight size={18} strokeWidth={3} /></>
+                                    )}
                             </button>
                         </motion.div>
                     ))}

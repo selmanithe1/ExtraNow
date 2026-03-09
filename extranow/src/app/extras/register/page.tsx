@@ -239,15 +239,22 @@ export default function ExtraRegistrationPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#f8fafc] py-20 px-6">
-            <div className="max-w-3xl mx-auto">
+        <div className="min-h-screen bg-background relative overflow-hidden py-20 px-6">
+            <div className="absolute top-0 left-0 w-full h-full bg-grid opacity-[0.03] pointer-events-none" />
+
+            <div className="max-w-3xl mx-auto relative z-10">
                 <div className="mb-12 flex items-center justify-between">
-                    <Link href="/extras" className="flex items-center gap-2 text-slate-400 hover:text-slate-900 font-bold transition-all uppercase text-xs tracking-widest">
-                        <ChevronLeft size={16} /> Précédent
-                    </Link>
+                    <div className="flex flex-col gap-1">
+                        <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-accent font-black transition-all uppercase text-[10px] tracking-widest font-outfit">
+                            <ChevronLeft size={16} strokeWidth={3} /> Accueil
+                        </Link>
+                        <Link href="/extras/login" className="text-[9px] font-black text-orange-500 uppercase tracking-widest italic ml-1">
+                            Déjà inscrit ? Connexion
+                        </Link>
+                    </div>
                     <div className="flex gap-2">
                         {[1, 2, 3, 4].map(s => (
-                            <div key={s} className={`h-1.5 w-12 rounded-full transition-all ${s <= step ? "bg-orange-500" : "bg-slate-200"}`} />
+                            <div key={s} className={`h-1.5 w-12 rounded-full transition-all duration-500 ${s <= step ? "bg-accent shadow-[0_0_10px_rgba(249,115,22,0.5)]" : "bg-slate-200"}`} />
                         ))}
                     </div>
                 </div>

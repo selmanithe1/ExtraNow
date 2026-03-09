@@ -39,6 +39,7 @@ model Extra {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   applications Application[]
+  results     TestResult[]
 }
 
 model Mission {
@@ -64,4 +65,25 @@ model Application {
   createdAt DateTime @default(now())
   mission   Mission  @relation(fields: [missionId], references: [id])
   extra     Extra    @relation(fields: [extraId], references: [id])
+}
+model SkillTest {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  category    String   // Hospitality category
+  questions   String   // JSON string of questions
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  results     TestResult[]
+}
+
+model TestResult {
+  id        String   @id @default(cuid())
+  extraId   String
+  testId    String
+  score     Int
+  passed    Boolean
+  createdAt DateTime @default(now())
+  extra     Extra    @relation(fields: [extraId], references: [id])
+  test      SkillTest @relation(fields: [testId], references: [id])
 }

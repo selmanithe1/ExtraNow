@@ -5,6 +5,7 @@ import { Building2, CheckCircle2, Users, Rocket, X, Send, MapPin, Calendar, Doll
 import Link from "next/link";
 import { useState } from "react";
 import { createMission } from "@/app/actions";
+import { HOSPITALITY_ROLES } from "@/app/data";
 
 export default function EntreprisesPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -37,18 +38,23 @@ export default function EntreprisesPage() {
     };
 
     return (
-        <div className="min-h-screen bg-white">
-            {/* Simple Header for navigation back */}
-            <nav className="h-20 border-b border-slate-100 flex items-center justify-between px-10">
-                <Link href="/" className="text-2xl font-black text-slate-900">
-                    Extra<span className="text-orange-500">Now</span>
-                </Link>
-                <Link href="/" className="text-sm font-bold text-slate-500 hover:text-orange-500 transition-colors">
-                    Retour à l'accueil
-                </Link>
-            </nav>
+        <div className="min-h-screen bg-background relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-full bg-grid opacity-[0.03] pointer-events-none" />
 
-            <main className="max-w-7xl mx-auto px-6 py-20">
+            {/* Navigation */}
+            <header className="fixed top-0 z-50 w-full glass border-b border-border/50">
+                <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+                    <Link href="/" className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2">
+                        <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center text-white rotate-3">E</div>
+                        <span className="font-outfit italic">Extra<span className="text-accent italic">Now</span></span>
+                    </Link>
+                    <Link href="/" className="text-xs font-black text-foreground/50 hover:text-accent transition-all uppercase tracking-[0.2em] font-outfit">
+                        Retour à l'accueil
+                    </Link>
+                </nav>
+            </header>
+
+            <main className="max-w-7xl mx-auto px-6 py-40 relative z-10">
                 <div className="text-center mb-16">
                     <motion.h1
                         initial={{ opacity: 0, y: 20 }}
@@ -160,14 +166,18 @@ export default function EntreprisesPage() {
                                             <div className="col-span-2">
                                                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 block ml-1">Type de Poste</label>
                                                 <div className="relative">
-                                                    <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-                                                    <input
+                                                    <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" size={18} />
+                                                    <select
                                                         required
-                                                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 font-bold focus:outline-none focus:border-orange-500 transition-all"
-                                                        placeholder="Ex: Chef de Rang, Barman..."
+                                                        className="w-full bg-slate-50 border border-slate-100 rounded-2xl py-4 pl-12 pr-6 font-bold focus:outline-none focus:border-orange-500 transition-all appearance-none cursor-pointer"
                                                         value={formData.type}
                                                         onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                                                    />
+                                                    >
+                                                        <option value="" disabled>Sélectionnez un poste...</option>
+                                                        {HOSPITALITY_ROLES.map(role => (
+                                                            <option key={role} value={role}>{role}</option>
+                                                        ))}
+                                                    </select>
                                                 </div>
                                             </div>
                                             <div>

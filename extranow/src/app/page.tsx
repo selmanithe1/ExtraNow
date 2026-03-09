@@ -1,193 +1,385 @@
 "use client";
 
-import { CheckCircle2, Users, Calendar, TrendingUp, ShieldCheck, MessageCircle, Clock, Zap, Menu } from "lucide-react";
-import { motion } from "framer-motion";
-import { useState } from "react";
+import {
+  CheckCircle2,
+  Users,
+  Calendar,
+  TrendingUp,
+  ShieldCheck,
+  MessageCircle,
+  Clock,
+  Zap,
+  Menu,
+  ArrowRight,
+  Sparkles,
+  Search,
+  Star,
+  ChevronDown,
+  Building2,
+  Briefcase
+} from "lucide-react";
+import { motion, useScroll, useTransform, useSpring, AnimatePresence } from "framer-motion";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"]
+  });
+
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
+
+  const [counter, setCounter] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCounter(prev => (prev < 5248 ? prev + 127 : 5248));
+    }, 30);
+    return () => clearInterval(interval);
+  }, []);
+
+  const logos = [
+    "Ritz Paris", "Hilton", "Novotel", "Accor", "Ibis", "Mariott", "Pullman", "Vatel"
+  ];
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] selection:bg-orange-500/30">
-      {/* Navigation */}
-      <header className="fixed top-0 z-50 w-full bg-white border-b border-slate-100">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="text-2xl font-black tracking-tight text-[#0f172a]">
-            Extra<span className="text-orange-500 italic">Now</span>
-          </div>
+    <div ref={containerRef} className="min-h-screen bg-background selection:bg-accent/30 font-sans overflow-x-hidden">
+      {/* Progress Bar */}
+      <motion.div
+        className="fixed top-0 left-0 right-0 h-1 bg-accent z-[100] origin-left"
+        style={{ scaleX }}
+      />
 
-          <div className="hidden items-center gap-10 md:flex">
+      {/* Navigation */}
+      <header className="fixed top-0 z-50 w-full glass border-b border-border/50">
+        <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-2xl font-black tracking-tight text-foreground flex items-center gap-2"
+          >
+            <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center text-white rotate-3">E</div>
+            <span className="font-outfit italic">Extra<span className="text-accent italic">Now</span></span>
+          </motion.div>
+
+          <div className="hidden items-center gap-8 lg:flex">
             {[
               { label: "Accueil", href: "/" },
               { label: "Entreprises", href: "/entreprises" },
               { label: "Extras", href: "/extras" },
-              { label: "FAQ", href: "/faq" }
-            ].map((item) => (
-              <Link
+            ].map((item, idx) => (
+              <motion.div
                 key={item.label}
-                href={item.href}
-                className="text-sm font-bold text-[#0f172a] transition-all hover:text-orange-500 uppercase tracking-widest"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
               >
-                {item.label}
-              </Link>
+                <Link
+                  href={item.href}
+                  className="text-xs font-black text-foreground/70 transition-all hover:text-accent uppercase tracking-widest"
+                >
+                  {item.label}
+                </Link>
+              </motion.div>
             ))}
             <Link
               href="/admin/login"
-              className="rounded-2xl bg-[#0f172a] px-8 py-3 text-sm font-black text-white transition-all hover:bg-slate-800 hover:shadow-xl active:scale-95 uppercase tracking-[0.2em]"
+              className="rounded-2xl bg-foreground px-8 py-3.5 text-xs font-black text-white shadow-xl hover:shadow-accent/20 transition-all active:scale-95 uppercase tracking-[0.2em] flex items-center gap-2"
             >
-              Admin
+              <ShieldCheck size={16} /> Admin
             </Link>
           </div>
 
-          <button className="md:hidden text-[#0f172a]" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            <Menu className="h-7 w-7" strokeWidth={2.5} />
+          <button className="lg:hidden text-foreground" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            <Menu size={28} strokeWidth={2.5} />
           </button>
         </nav>
       </header>
 
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed inset-0 z-[60] glass-dark flex flex-col items-center justify-center p-10 space-y-8 lg:hidden"
+          >
+            <button onClick={() => setIsMenuOpen(false)} className="absolute top-10 right-10 text-white">
+              <Menu size={32} />
+            </button>
+            <Link href="/entreprises" className="text-4xl font-black text-white italic">Entreprises</Link>
+            <Link href="/extras" className="text-4xl font-black text-white italic">Extras</Link>
+            <Link href="/admin/login" className="text-xl font-bold text-accent">Administration</Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Hero Section */}
-      <section className="relative flex min-h-[95vh] flex-col justify-center overflow-hidden bg-[#0f172a] px-6 pt-20 text-white rounded-b-[4rem] shadow-2xl">
-        {/* Animated Background Elements */}
-        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-orange-500/20 rounded-full blur-[120px] animate-pulse" />
+      <section className="relative min-h-[100vh] flex flex-col justify-center items-center px-6 pt-32 pb-20 overflow-hidden bg-primary overflow-x-hidden">
+        {/* Visual Elements */}
+        <div className="absolute top-0 left-0 w-full h-full bg-grid opacity-[0.03]" />
+        <motion.div
+          animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
+          transition={{ duration: 10, repeat: Infinity }}
+          className="absolute top-[-20%] right-[-10%] w-[80%] h-[80%] bg-accent/30 rounded-full blur-[150px]"
+        />
         <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-blue-600/10 rounded-full blur-[120px]" />
 
-        <div className="mx-auto max-w-6xl text-center relative z-10">
+        <div className="max-w-7xl mx-auto text-center relative z-10 w-full">
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="inline-block px-4 py-2 bg-white/5 border border-white/10 rounded-2xl mb-8 backdrop-blur-md"
+            className="inline-flex items-center gap-3 px-6 py-2 bg-white/5 border border-white/10 rounded-full mb-10 backdrop-blur-xl"
           >
-            <span className="text-orange-500 font-black text-xs uppercase tracking-[0.3em]">Nouveau : Certification Premium 2024</span>
+            <Sparkles size={16} className="text-accent animate-pulse" />
+            <span className="text-white font-black text-[10px] uppercase tracking-[0.4em]">Expertise hôtelière certifiée</span>
           </motion.div>
 
           <motion.h1
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-6xl font-black tracking-tighter md:text-8xl lg:text-9xl mb-8 italic"
+            className="text-6xl md:text-8xl lg:text-[9.5rem] font-black tracking-tight text-white mb-10 leading-[0.9] font-outfit px-4"
           >
-            Trouvez un extra <span className="text-orange-500">qualifié</span>
+            L'Élite de <br />
+            <span className="gradient-text italic">l'Hôtellerie</span>
           </motion.h1>
 
           <motion.p
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mt-6 text-xl text-white/50 md:text-2xl font-medium max-w-3xl mx-auto leading-relaxed"
+            transition={{ delay: 0.2 }}
+            className="text-xl md:text-3xl text-white/40 font-medium max-w-3xl mx-auto mb-16 leading-relaxed px-4"
           >
-            La plateforme d'élite pour le recrutement instantané en hôtellerie et restauration.
+            Connectez-vous instantanément aux meilleurs talents de la restauration. Qualité, rapidité, excellence.
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mt-14 flex flex-wrap justify-center gap-6"
+            transition={{ delay: 0.3 }}
+            className="flex flex-col sm:flex-row justify-center items-center gap-6 px-4"
           >
             <Link
               href="/entreprises"
-              className="rounded-[2rem] bg-orange-500 px-12 py-6 text-xl font-black transition-all hover:bg-orange-600 hover:shadow-[0_25px_50px_-12px_rgba(249,115,22,0.5)] active:scale-95 uppercase tracking-widest text-white"
+              className="group relative overflow-hidden rounded-3xl bg-accent px-14 py-8 text-xl font-black text-white hover:shadow-[0_0_40px_-10px_rgba(249,115,22,0.6)] transition-all active:scale-95 uppercase tracking-widest w-full sm:w-auto text-center"
             >
-              Je suis Pro
+              <span className="relative z-10 flex items-center justify-center gap-3">Je Recrute <Building2 size={24} /></span>
+              <motion.div
+                className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500"
+              />
             </Link>
-            <Link
-              href="/extras"
-              className="rounded-[2rem] bg-white text-[#0f172a] px-12 py-6 text-xl font-black transition-all hover:shadow-2xl active:scale-95 uppercase tracking-widest"
-            >
-              Je suis Extra
-            </Link>
+            <div className="flex flex-col items-center gap-4 w-full sm:w-auto">
+              <Link
+                href="/extras/register"
+                className="group rounded-3xl bg-white/5 border border-white/10 px-14 py-8 text-xl font-black text-white hover:bg-white/10 transition-all active:scale-95 uppercase tracking-widest backdrop-blur-md w-full text-center"
+              >
+                <span className="flex items-center justify-center gap-3">Je suis Extra <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" /></span>
+              </Link>
+              <Link
+                href="/extras/login"
+                className="text-xs font-black text-white/30 uppercase tracking-[0.3em] hover:text-accent transition-colors italic"
+              >
+                Déjà inscrit ? <span className="underline decoration-accent/50 underline-offset-4">Se Connecter</span>
+              </Link>
+            </div>
           </motion.div>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce cursor-pointer text-white/20"
+        >
+          <ChevronDown size={32} />
+        </motion.div>
+      </section>
+
+      {/* Logo Marquee */}
+      <section className="py-20 bg-white border-b border-border overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 mb-10 text-center">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.5em] italic">Ils nous font confiance</p>
+        </div>
+        <div className="flex gap-20 animate-infinite-scroll overflow-hidden whitespace-nowrap py-4">
+          {[...logos, ...logos].map((logo, i) => (
+            <span key={i} className="text-4xl md:text-6xl font-black text-slate-200 hover:text-accent transition-colors cursor-default select-none italic font-outfit uppercase">
+              {logo}
+            </span>
+          ))}
         </div>
       </section>
 
-      {/* Stats Section with High Visibility */}
-      <section className="py-32">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Stats / Numbers */}
+      <section className="py-40 relative">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { label: "Talents inscrits", value: "5K+", icon: Users, color: "text-blue-600" },
-              { label: "Établissements", value: "1.2K+", icon: Calendar, color: "text-orange-600" },
-              { label: "Opérations", value: "15K+", icon: Zap, color: "text-emerald-600" },
-              { label: "Score Qualité", value: "4.8/5", icon: TrendingUp, color: "text-indigo-600" },
+              { label: "Talents Prêts", value: counter, suffix: "+", icon: Zap, color: "bg-orange-50 text-orange-600" },
+              { label: "Projets Complétés", value: 15, suffix: "K", icon: CheckCircle2, color: "bg-emerald-50 text-emerald-600" },
+              { label: "Villes Actives", value: 42, suffix: "", icon: Star, color: "bg-blue-50 text-blue-600" },
+              { label: "Satisfaction", value: 4.9, suffix: "/5", icon: TrendingUp, color: "bg-indigo-50 text-indigo-600" },
             ].map((stat, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
-                className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm text-center group hover:border-orange-200 transition-all"
+                transition={{ delay: i * 0.1 }}
+                className="bg-white p-12 rounded-[3rem] border border-border shadow-2xl shadow-slate-200/50 group hover:y-[-10px] transition-all"
               >
-                <div className={`mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-50 ${stat.color} mb-6 shadow-inner group-hover:scale-110 transition-transform`}>
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-8 ${stat.color} group-hover:rotate-12 transition-transform`}>
                   <stat.icon size={32} strokeWidth={2.5} />
                 </div>
-                <div className="text-4xl font-black text-[#0f172a] tracking-tighter mb-2">{stat.value}</div>
-                <div className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">{stat.label}</div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="bg-white py-32 rounded-t-[5rem]">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="mb-24 text-center">
-            <h2 className="text-6xl font-black text-[#0f172a] tracking-tighter italic">COMMENT ÇA <span className="text-orange-500">MARCHE</span> ?</h2>
-            <p className="mt-6 text-lg text-slate-400 font-bold uppercase tracking-[0.3em]">L'efficacité poussée à l'extrême</p>
-          </div>
-          <div className="grid gap-12 md:grid-cols-3">
-            {[
-              { title: "Publiez", desc: "Décrivez votre besoin en 30 secondes chrono.", num: "01" },
-              { title: "Sélectionnez", desc: "Algorithme de matching haute performance.", num: "02" },
-              { title: "Validez", desc: "Profils qualifiés, motivés et disponibles.", num: "03" },
-            ].map((step, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ y: -15 }}
-                className="bg-slate-50 relative p-12 rounded-[3rem] border border-slate-100"
-              >
-                <div className="text-8xl font-black text-slate-200 absolute top-8 right-8 leading-none opacity-50 italic">
-                  {step.num}
+                <div className="text-5xl font-black text-foreground tracking-tight mb-2 font-outfit">
+                  {stat.value}{stat.suffix}
                 </div>
-                <h3 className="text-3xl font-black text-[#0f172a] mb-6 relative z-10">{step.title}</h3>
-                <p className="text-slate-500 font-medium leading-relaxed text-lg relative z-10">{step.desc}</p>
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</div>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Contact Banner */}
-      <section className="py-20 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-orange-500 rounded-[3rem] p-16 md:p-24 flex flex-col md:flex-row items-center justify-between gap-12 shadow-2xl shadow-orange-500/30 overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.2),transparent_40%)]" />
-            <div className="text-center md:text-left relative z-10">
-              <h2 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tighter">Prêt pour demain ?</h2>
-              <p className="text-white/80 font-bold text-lg md:text-xl max-w-lg">Rejoignez la communauté de restauration la plus dynamique de France.</p>
-            </div>
-            <Link href="/extras/register" className="bg-[#0f172a] text-white px-12 py-6 rounded-3xl font-black text-xl hover:bg-slate-800 transition-all shadow-xl active:scale-95 uppercase tracking-widest relative z-10">
-              Démarrer
-            </Link>
+      {/* Feature Timeline - Interactive */}
+      <section className="py-40 bg-primary rounded-t-[5rem] text-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="max-w-3xl mb-32">
+            <h2 className="text-6xl md:text-8xl font-black mb-8 leading-none font-outfit italic">Le futur du <br /><span className="text-accent underline decoration-accent/30 underline-offset-8">recrutement</span>.</h2>
+            <p className="text-white/40 font-bold uppercase tracking-[0.3em]">Trois étapes vers l'excellence</p>
+          </div>
+
+          <div className="grid gap-20">
+            {[
+              { step: "01", title: "Publication Intelligente", desc: "Notre IA analyse votre besoin et cible instantanément les profils qui correspondent à l'ADN de votre établissement.", img: "building" },
+              { step: "02", title: "Matching de Haute Qualité", desc: "Seuls les extras ayant les compétences vérifiées et les meilleures notes reçoivent votre offre.", img: "stars" },
+              { step: "03", title: "Validation & Succès", desc: "Contrat généré, assurance active, et talent sur place. Tout est géré par Extra Now.", img: "rocket" },
+            ].map((item, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, x: idx % 2 === 0 ? -50 : 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                className="flex flex-col md:flex-row items-center gap-20 group"
+              >
+                <div className="text-[12rem] font-black text-white/5 font-outfit leading-none mb-[-2rem] group-hover:text-accent/10 transition-colors">
+                  {item.step}
+                </div>
+                <div className="max-w-2xl">
+                  <h3 className="text-4xl md:text-5xl font-black mb-6 italic text-accent">{item.title}</h3>
+                  <p className="text-xl md:text-2xl text-white/50 leading-relaxed font-medium">{item.desc}</p>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      <footer className="bg-[#0f172a] pt-32 pb-16 text-white/40">
-        <div className="mx-auto max-w-7xl px-6 text-center">
-          <div className="text-4xl font-black text-white mb-10 tracking-widest">
-            EXTRA<span className="text-orange-500 italic">NOW</span>
+      {/* Testimonials - Premium Card */}
+      <section className="py-40 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="bg-slate-50 p-16 md:p-32 rounded-[5rem] relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-accent/5 rounded-full blur-3xl" />
+            <MessageCircle size={100} className="text-slate-100 absolute -top-5 -left-5 rotate-12" />
+
+            <div className="relative z-10">
+              <Star className="text-accent mb-10" fill="currentColor" size={40} />
+              <p className="text-3xl md:text-5xl font-black text-foreground italic leading-[1.3] mb-12">
+                "Extra Now a totalement révolutionné notre gestion du personnel. Trouver un chef de rang qualifié en plein service est passé d'un cauchemar à un simple clic."
+              </p>
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 bg-slate-200 rounded-2xl overflow-hidden shadow-lg">
+                  <div className="w-full h-full bg-slate-900 flex items-center justify-center text-white font-black">JM</div>
+                </div>
+                <div>
+                  <p className="font-black text-xl italic uppercase font-outfit">Jean-Marc Dupont</p>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Directeur • Le Grand Bistrot</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="flex flex-wrap justify-center gap-10 mb-20">
-            {["Services", "Procédures", "Sécurité", "Contact", "Légal"].map(link => (
-              <a key={link} href="#" className="font-bold uppercase tracking-[0.2em] text-xs hover:text-white transition-all">{link}</a>
-            ))}
+        </div>
+      </section>
+
+      {/* CTA Final */}
+      <section className="py-40 px-6">
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          className="max-w-7xl mx-auto bg-primary rounded-[5rem] p-20 md:p-32 text-center relative overflow-hidden shadow-3xl shadow-slate-900/50"
+        >
+          <div className="absolute inset-0 bg-accent/10 blur-[100px] -animate-pulse" />
+          <div className="relative z-10">
+            <h2 className="text-5xl md:text-9xl font-black text-white mb-10 tracking-tight leading-none italic font-outfit">Êtes-vous <br /><span className="gradient-text">Extra</span> ?</h2>
+            <div className="flex flex-col sm:flex-row justify-center gap-8">
+              <Link href="/entreprises" className="bg-white text-primary px-16 py-8 rounded-3xl font-black text-xl hover:scale-105 transition-all uppercase tracking-widest shadow-xl">
+                Recruter
+              </Link>
+              <Link href="/extras/register" className="bg-accent text-white px-16 py-8 rounded-3xl font-black text-xl hover:scale-105 transition-all uppercase tracking-widest shadow-xl shadow-accent/30">
+                Postuler
+              </Link>
+            </div>
           </div>
-          <div className="pt-10 border-t border-white/5 text-[10px] font-bold uppercase tracking-[0.5em]">
-            © 2024 Extra Now Platform. High-Performance Hospitality.
+        </motion.div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-primary pt-40 pb-20 text-white/30 border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-20 mb-32">
+            <div className="lg:col-span-2">
+              <div className="text-4xl font-black text-white italic mb-10 font-outfit">
+                Extra<span className="text-accent">Now</span>
+              </div>
+              <p className="max-w-xs text-lg font-medium leading-relaxed">Le standard d'excellence pour le recrutement hôtelier. Chaque talent, chaque établissement, chaque service compte.</p>
+            </div>
+            <div>
+              <p className="text-white font-black uppercase tracking-[0.2em] text-[10px] mb-8">Navigation</p>
+              <div className="flex flex-col gap-4 font-bold text-sm">
+                <Link href="/entreprises" className="hover:text-accent transition-all uppercase">Entreprises</Link>
+                <Link href="/extras" className="hover:text-accent transition-all uppercase">Extras</Link>
+                <Link href="/faq" className="hover:text-accent transition-all uppercase">FAQ</Link>
+                <Link href="/admin/login" className="hover:text-accent transition-all uppercase">Plateforme</Link>
+              </div>
+            </div>
+            <div>
+              <p className="text-white font-black uppercase tracking-[0.2em] text-[10px] mb-8">Légal</p>
+              <div className="flex flex-col gap-4 font-bold text-sm">
+                <p className="hover:text-accent transition-all uppercase cursor-pointer">CGU</p>
+                <p className="hover:text-accent transition-all uppercase cursor-pointer">Confidentialité</p>
+                <p className="hover:text-accent transition-all uppercase cursor-pointer">Assurance</p>
+                <p className="hover:text-accent transition-all uppercase cursor-pointer">Cookies</p>
+              </div>
+            </div>
+          </div>
+          <div className="pt-20 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-10">
+            <p className="text-[10px] font-black uppercase tracking-[0.5em]">© 2024 Extra Now • Premium Hospitality</p>
+            <div className="flex gap-10 text-[10px] font-black uppercase tracking-widest">
+              <span className="hover:text-white transition-colors cursor-pointer">LinkedIn</span>
+              <span className="hover:text-white transition-colors cursor-pointer">Instagram</span>
+              <span className="hover:text-white transition-colors cursor-pointer">Twitter</span>
+            </div>
           </div>
         </div>
       </footer>
+
+      <style jsx global>{`
+                @keyframes infinite-scroll {
+                    from { transform: translateX(0); }
+                    to { transform: translateX(-50%); }
+                }
+                .animate-infinite-scroll {
+                    animation: infinite-scroll 40s linear infinite;
+                }
+                .animate-infinite-scroll:hover {
+                    animation-play-state: paused;
+                }
+            `}</style>
     </div>
   );
 }

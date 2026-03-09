@@ -70,16 +70,23 @@ export default function ExtraLayout({
                 <div className="mt-auto space-y-4">
                     <div className="bg-white/5 rounded-3xl p-6 border border-white/5">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center font-black relative overflow-hidden group border border-white/10">
-                                {extra?.avatarUrl && extra.avatarUrl !== "simulated_avatar_url" ? (
-                                    <img src={extra.avatarUrl} className="w-full h-full object-cover" alt="Profile" />
+                            <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center font-black relative overflow-hidden group border border-white/10 shrink-0">
+                                {extra?.avatarUrl ? (
+                                    <img
+                                        src={extra.avatarUrl}
+                                        className="w-full h-full object-cover"
+                                        alt="Profile"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).style.display = 'none';
+                                        }}
+                                    />
                                 ) : (
-                                    <span className="text-white">
+                                    <span className="text-white text-xs">
                                         {extra?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || "EX"}
                                     </span>
                                 )}
-                                <div className="absolute inset-0 bg-slate-800 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <User size={14} />
+                                <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <User size={14} className="text-white" />
                                 </div>
                             </div>
                             <div>
@@ -93,9 +100,9 @@ export default function ExtraLayout({
                         <p className="text-[9px] font-black text-slate-500 uppercase mt-2">Niveau 4 • 7500 XP</p>
                     </div>
 
-                    <button className="flex items-center gap-3 p-4 text-slate-500 hover:text-red-400 font-bold uppercase tracking-widest text-[10px] transition-colors w-full">
+                    <Link href="/" className="flex items-center gap-3 p-4 text-slate-500 hover:text-red-400 font-bold uppercase tracking-widest text-[10px] transition-colors w-full">
                         <LogOut size={18} /> Déconnexion
-                    </button>
+                    </Link>
                 </div>
             </aside>
 

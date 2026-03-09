@@ -20,9 +20,9 @@ export default function AdminLayout({
                 <nav className="flex-1 px-6 space-y-2 mt-4">
                     {[
                         { icon: LayoutDashboard, label: "Dashboard", href: "/admin", active: true },
-                        { icon: Users, label: "Utilisateurs", href: "/admin", active: false },
-                        { icon: FileText, label: "Missions", href: "/admin", active: false },
-                        { icon: Settings, label: "Paramètres", href: "/admin", active: false },
+                        { icon: Users, label: "Utilisateurs", href: "/admin?tab=extras", active: false },
+                        { icon: FileText, label: "Missions", href: "/admin?tab=missions", active: false },
+                        { icon: Settings, label: "Paramètres", href: "/admin/settings", active: false },
                     ].map((item) => (
                         <Link
                             key={item.label}
