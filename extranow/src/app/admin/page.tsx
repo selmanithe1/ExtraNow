@@ -1,3 +1,5 @@
+"use client";
+
 import { TrendingUp, Users, Zap, DollarSign, Check, X, Search, FileText, Download, Briefcase, MapPin, User as UserIcon, Gamepad2, GraduationCap, Edit3, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
