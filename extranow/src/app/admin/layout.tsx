@@ -1,15 +1,28 @@
+"use client";
+
 import { LayoutDashboard, Users, FileText, Settings, LogOut, Bell } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 export default function AdminLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    const searchParams = useSearchParams();
+    const activeTab = searchParams.get("tab") || "dashboard";
+
+    const menuItems = [
+        { icon: LayoutDashboard, label: "Dashboard", href: "/admin", tab: "dashboard" },
+        { icon: Users, label: "Utilisateurs", href: "/admin?tab=extras", tab: "extras" },
+        { icon: FileText, label: "Missions", href: "/admin?tab=missions", tab: "missions" },
+        { icon: Settings, label: "Paramètres", href: "/admin/settings", tab: "settings" },
+    ];
+
     return (
         <div className="flex min-h-screen bg-[#f8fafc]">
             {/* Sidebar */}
-            <aside className="w-72 bg-[#0f172a] hidden md:flex flex-col shadow-2xl">
+            <aside className="w-72 bg-[#0f172a] hidden md:flex flex-col shadow-2xl fixed h-full z-50">
                 <div className="p-8 mb-4">
                     <Link href="/" className="text-2xl font-black text-white hover:opacity-80 transition-opacity">
                         Extra<span className="text-[#f97316]">Now</span>
@@ -18,16 +31,11 @@ export default function AdminLayout({
                 </div>
 
                 <nav className="flex-1 px-6 space-y-2 mt-4">
-                    {[
-                        { icon: LayoutDashboard, label: "Dashboard", href: "/admin", active: true },
-                        { icon: Users, label: "Utilisateurs", href: "/admin?tab=extras", active: false },
-                        { icon: FileText, label: "Missions", href: "/admin?tab=missions", active: false },
-                        { icon: Settings, label: "Paramètres", href: "/admin/settings", active: false },
-                    ].map((item) => (
+                    {menuItems.map((item) => (
                         <Link
                             key={item.label}
                             href={item.href}
-                            className={`flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 ${item.active
+                            className={`flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 ${activeTab === item.tab
                                 ? "bg-[#f97316] text-white shadow-lg shadow-orange-500/20"
                                 : "text-slate-400 hover:bg-white/5 hover:text-white"
                                 }`}
@@ -47,7 +55,7 @@ export default function AdminLayout({
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <main className="flex-1 flex flex-col min-w-0 overflow-hidden ml-72">
                 {/* Header */}
                 <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-10 shadow-sm z-10">
                     <h1 className="text-xl font-bold text-[#0f172a]">Tableau de Bord</h1>
