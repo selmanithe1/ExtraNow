@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp, Users, Zap, DollarSign, Check, X, Search, FileText, Download, Briefcase, MapPin, User as UserIcon, Gamepad2, GraduationCap, Edit3, Trash2 } from "lucide-react";
+import { LayoutDashboard, TrendingUp, Users, Zap, DollarSign, Check, X, Search, FileText, Download, Briefcase, MapPin, User as UserIcon, Gamepad2, GraduationCap, Edit3, Trash2 } from "lucide-react";
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,7 +11,7 @@ export default function AdminPage() {
     const searchParams = useSearchParams();
     const tabParam = searchParams.get("tab");
 
-    const [activeTab, setActiveTab] = useState(tabParam || "missions");
+    const [activeTab, setActiveTab] = useState(tabParam || "dashboard");
     const [missions, setMissions] = useState<any[]>([]);
     const [extras, setExtras] = useState<any[]>([]);
     const [statsData, setStatsData] = useState<any>(null);
@@ -19,6 +19,14 @@ export default function AdminPage() {
     const [results, setResults] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isEditingTest, setIsEditingTest] = useState<any>(null);
+
+    useEffect(() => {
+        if (tabParam) {
+            setActiveTab(tabParam);
+        } else {
+            setActiveTab("dashboard");
+        }
+    }, [tabParam]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -76,7 +84,7 @@ export default function AdminPage() {
 
             {/* Tabs */}
             <div className="flex gap-4 p-2 bg-slate-100 rounded-3xl w-fit">
-                {["missions", "extras", "tests", "scores"].map(tab => (
+                {["dashboard", "missions", "extras", "tests", "scores"].map(tab => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
@@ -105,6 +113,34 @@ export default function AdminPage() {
 
                     <div className="space-y-4">
                         {loading && <div className="p-20 text-center animate-pulse text-slate-300 font-black italic">Chargement...</div>}
+
+                        {!loading && activeTab === "dashboard" && (
+                            <div className="flex-1 flex flex-col items-center justify-center text-center p-10">
+                                <div className="w-20 h-20 bg-orange-50 text-orange-500 rounded-3xl flex items-center justify-center mb-6 shadow-inner">
+                                    <LayoutDashboard size={40} strokeWidth={2.5} />
+                                </div>
+                                <h3 className="text-2xl font-black text-slate-900 mb-2 italic">Bienvenue sur le <span className="text-orange-500">Dashboard</span></h3>
+                                <p className="text-slate-400 font-bold max-w-sm uppercase tracking-widest text-[10px]">Utilisez le menu pour gérer les missions, les utilisateurs et les tests de compétences.</p>
+                            </div>
+                        )}
+
+                        {!loading && activeTab === "extras" && extras.map(e => (
+                            <div key={e.id} className="p-6 border border-slate-100 rounded-[2rem] flex items-center justify-between hover:bg-slate-50 transition-all group">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-slate-100 rounded-xl overflow-hidden flex items-center justify-center font-black">
+                                        {e.avatarUrl ? <img src={e.avatarUrl} className="w-full h-full object-cover" /> : <UserIcon size={20} className="text-slate-400" />}
+                                    </div>
+                                    <div>
+                                        <p className="font-black italic text-slate-900 group-hover:text-orange-500 transition-colors uppercase text-sm">{e.name}</p>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{e.skills || 'Sans compétences'}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-lg ${e.status === 'VERIFICATION' ? 'bg-orange-100 text-orange-600' : 'bg-emerald-100 text-emerald-600'}`}>{e.status}</span>
+                                    <button className="p-3 bg-slate-100 text-slate-400 rounded-xl hover:bg-red-50 text-red-500 transition-all active:scale-95"><Trash2 size={18} /></button>
+                                </div>
+                            </div>
+                        ))}
 
                         {!loading && activeTab === "missions" && missions.map(m => (
                             <div key={m.id} className="p-6 border border-slate-100 rounded-[2rem] flex items-center justify-between hover:bg-slate-50 transition-all group">
