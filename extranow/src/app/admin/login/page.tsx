@@ -2,31 +2,44 @@
 
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Lock, User, ArrowRight, ShieldCheck, Zap } from "lucide-react";
+import { Lock, User, ArrowRight, ShieldCheck, Zap, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { adminLogin } from "@/app/actions";
 
 export default function AdminLoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
-    const handleLogin = (e?: React.FormEvent) => {
+    const handleLogin = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         setIsLoading(true);
-        // Simulation d'authentification
-        setTimeout(() => {
-            setIsLoading(false);
+        setError(null);
+        const result = await adminLogin(email, password);
+        setIsLoading(false);
+        if (result.success) {
             router.push("/admin");
-        }, 1000);
+        } else {
+            setError(result.error || "Connexion refusée.");
+        }
     };
 
     const fastLogin = () => {
         setEmail("admin@extranow.fr");
         setPassword("admin123");
-        handleLogin();
+        // Trigger login with hardcoded values directly
+        setIsLoading(true);
+        setError(null);
+        adminLogin("admin@extranow.fr", "admin123").then((result) => {
+            setIsLoading(false);
+            if (result.success) { router.push("/admin"); }
+            else { setError(result.error || "Erreur"); }
+        });
     };
+
 
     return (
         <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-6 relative overflow-hidden">
@@ -81,6 +94,12 @@ export default function AdminLoginPage() {
                     </div>
 
                     <div className="pt-4 space-y-4">
+                        {error && (
+                            <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-2xl px-5 py-4">
+                                <AlertCircle size={18} className="shrink-0" />
+                                <p className="text-sm font-bold">{error}</p>
+                            </div>
+                        )}
                         <button
                             type="submit"
                             disabled={isLoading}

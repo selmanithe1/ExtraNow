@@ -3,6 +3,33 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
+// Admin credentials (in production, use a proper secrets manager)
+const ADMIN_EMAIL = "admin@extranow.fr";
+const ADMIN_PASSWORD = "admin123";
+
+export async function adminLogin(email: string, password: string) {
+    try {
+        if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+            // Ensure admin exists in DB
+            const admin = await prisma.user.upsert({
+                where: { email: ADMIN_EMAIL },
+                update: {},
+                create: {
+                    email: ADMIN_EMAIL,
+                    name: "Administrateur ExtraNow",
+                    role: "ADMIN",
+                },
+            });
+            return { success: true, admin };
+        }
+        return { success: false, error: "Identifiants incorrects. Utilisez admin@extranow.fr / admin123" };
+    } catch (error) {
+        console.error("Admin login error:", error);
+        return { success: false, error: "Erreur technique lors de la connexion." };
+    }
+}
+
+
 export async function updateMissionStatus(id: string, status: string) {
     try {
         const updatedMission = await prisma.mission.update({
