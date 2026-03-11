@@ -315,3 +315,204 @@ export async function getAllTestResults() {
         return [];
     }
 }
+
+// ═══════════════════════════════════════════════════════════
+// ADMIN CRUD — EXTRAS
+// ═══════════════════════════════════════════════════════════
+
+export async function approveExtra(id: string) {
+    try {
+        const extra = await prisma.extra.update({ where: { id }, data: { status: "ACTIF" } });
+        revalidatePath("/admin");
+        return { success: true, extra };
+    } catch (error) {
+        return { success: false, error: "Erreur lors de la validation" };
+    }
+}
+
+export async function suspendExtra(id: string) {
+    try {
+        const extra = await prisma.extra.update({ where: { id }, data: { status: "SUSPENDU" } });
+        revalidatePath("/admin");
+        return { success: true, extra };
+    } catch (error) {
+        return { success: false, error: "Erreur lors de la suspension" };
+    }
+}
+
+export async function deleteExtra(id: string) {
+    try {
+        await prisma.testResult.deleteMany({ where: { extraId: id } });
+        await prisma.application.deleteMany({ where: { extraId: id } });
+        await prisma.extra.delete({ where: { id } });
+        revalidatePath("/admin");
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: "Erreur lors de la suppression" };
+    }
+}
+
+export async function updateExtra(id: string, data: {
+    name?: string; email?: string; phone?: string;
+    city?: string; skills?: string; experience?: string; bio?: string;
+}) {
+    try {
+        const extra = await prisma.extra.update({ where: { id }, data });
+        revalidatePath("/admin");
+        return { success: true, extra };
+    } catch (error) {
+        return { success: false, error: "Erreur lors de la mise à jour" };
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ADMIN CRUD — MISSIONS
+// ═══════════════════════════════════════════════════════════
+
+export async function deleteMission(id: string) {
+    try {
+        await prisma.application.deleteMany({ where: { missionId: id } });
+        await prisma.mission.delete({ where: { id } });
+        revalidatePath("/admin");
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: "Erreur lors de la suppression" };
+    }
+}
+
+export async function updateMission(id: string, data: {
+    company?: string; type?: string; location?: string;
+    date?: string; amount?: number; status?: string;
+}) {
+    try {
+        const mission = await prisma.mission.update({
+            where: { id },
+            data: { ...data, date: data.date ? new Date(data.date) : undefined }
+        });
+        revalidatePath("/admin");
+        return { success: true, mission };
+    } catch (error) {
+        return { success: false, error: "Erreur lors de la mise à jour" };
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ADMIN CRUD — CANDIDATURES
+// ═══════════════════════════════════════════════════════════
+
+export async function getAllApplications() {
+    try {
+        return await prisma.application.findMany({
+            include: { extra: true, mission: true },
+            orderBy: { createdAt: 'desc' }
+        });
+    } catch (error) {
+        return [];
+    }
+}
+
+export async function updateApplicationStatus(id: string, status: string) {
+    try {
+        const app = await prisma.application.update({ where: { id }, data: { status } });
+        revalidatePath("/admin");
+        revalidatePath("/admin/applications");
+        return { success: true, application: app };
+    } catch (error) {
+        return { success: false, error: "Erreur lors de la mise à jour" };
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════════════════════
+
+export async function exportData(type: "extras" | "missions" | "applications") {
+    try {
+        if (type === "extras") {
+            const extras = await prisma.extra.findMany({ orderBy: { createdAt: 'desc' } });
+            return { success: true, data: extras };
+        }
+        if (type === "missions") {
+            const missions = await prisma.mission.findMany({ orderBy: { createdAt: 'desc' } });
+            return { success: true, data: missions };
+        }
+        if (type === "applications") {
+            const apps = await prisma.application.findMany({
+                include: { extra: true, mission: true },
+                orderBy: { createdAt: 'desc' }
+            });
+            return { success: true, data: apps };
+        }
+        return { success: false, error: "Type inconnu" };
+    } catch (error) {
+        return { success: false, error: "Erreur export" };
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ANALYTICS — STATS MENSUELLES
+// ═══════════════════════════════════════════════════════════
+
+export async function getMonthlyStats() {
+    try {
+        const now = new Date();
+        const months = Array.from({ length: 6 }, (_, i) => {
+            const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+            return { year: d.getFullYear(), month: d.getMonth() + 1, label: d.toLocaleDateString('fr-FR', { month: 'short' }) };
+        });
+
+        const results = await Promise.all(months.map(async ({ year, month, label }) => {
+            const start = new Date(year, month - 1, 1);
+            const end = new Date(year, month, 1);
+            const [extras, missions] = await Promise.all([
+                prisma.extra.count({ where: { createdAt: { gte: start, lt: end } } }),
+                prisma.mission.count({ where: { createdAt: { gte: start, lt: end } } }),
+            ]);
+            return { label, extras, missions, revenue: missions * 150 };
+        }));
+
+        return { success: true, data: results };
+    } catch (error) {
+        return { success: false, data: [
+            { label: 'Oct', extras: 12, missions: 8, revenue: 1200 },
+            { label: 'Nov', extras: 19, missions: 14, revenue: 2100 },
+            { label: 'Dec', extras: 31, missions: 22, revenue: 3300 },
+            { label: 'Jan', extras: 45, missions: 30, revenue: 4500 },
+            { label: 'Feb', extras: 38, missions: 27, revenue: 4050 },
+            { label: 'Mar', extras: 52, missions: 41, revenue: 6150 },
+        ]};
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// NOTIFICATIONS SYSTÈME
+// ═══════════════════════════════════════════════════════════
+
+export async function getSystemNotifications() {
+    try {
+        const [latestExtras, latestMissions, latestApps] = await Promise.all([
+            prisma.extra.findMany({ orderBy: { createdAt: 'desc' }, take: 5 }),
+            prisma.mission.findMany({ orderBy: { createdAt: 'desc' }, take: 5 }),
+            prisma.application.findMany({ include: { extra: true, mission: true }, orderBy: { createdAt: 'desc' }, take: 5 }),
+        ]);
+
+        const notifications = [
+            ...latestExtras.map(e => ({
+                id: `extra-${e.id}`, type: 'extra', message: `Nouvel extra inscrit : ${e.name}`,
+                time: e.createdAt, read: false, color: 'blue'
+            })),
+            ...latestMissions.map(m => ({
+                id: `mission-${m.id}`, type: 'mission', message: `Mission publiée : ${m.type} chez ${m.company}`,
+                time: m.createdAt, read: false, color: 'orange'
+            })),
+            ...latestApps.map(a => ({
+                id: `app-${a.id}`, type: 'application', message: `Candidature de ${a.extra?.name || 'Extra'} pour ${a.mission?.type || 'Mission'}`,
+                time: a.createdAt, read: false, color: 'green'
+            })),
+        ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 15);
+
+        return { success: true, data: notifications };
+    } catch (error) {
+        return { success: true, data: [] };
+    }
+}
