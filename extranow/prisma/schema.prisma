@@ -11,13 +11,17 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  role      String   @default("CLIENT") // CLIENT, EXTRA, ADMIN
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  missions  Mission[]
+  id          String    @id @default(cuid())
+  email       String    @unique
+  name        String?
+  companyName        String?
+  password           String?
+  role               String    @default("CLIENT") // CLIENT, EXTRA, ADMIN
+  stripeCustomerId   String?   // Added for Stripe Checkout
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  missions           Mission[]
+  conversations      Conversation[]
 }
 
 model Extra {
@@ -35,11 +39,13 @@ model Extra {
   avatarUrl   String?
   password    String?  // Hashé en production
   rating      Float    @default(0)
-  status      String   @default("VERIFICATION") // ACTIF, VERIFICATION
-  createdAt   DateTime @default(now())
+  status          String   @default("VERIFICATION") // ACTIF, VERIFICATION
+  stripeAccountId String?  // Added for Stripe Connect (Payouts)
+  createdAt       DateTime @default(now())
   updatedAt   DateTime @updatedAt
   applications Application[]
-  results     TestResult[]
+  results         TestResult[]
+  conversations   Conversation[]
 }
 
 model Mission {
@@ -54,7 +60,9 @@ model Mission {
   client      User?    @relation(fields: [clientId], references: [id])
   applications Application[]
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime  @updatedAt
+  payment     Payment?
+  conversations Conversation[]
 }
 
 model Application {
@@ -86,4 +94,47 @@ model TestResult {
   createdAt DateTime @default(now())
   extra     Extra    @relation(fields: [extraId], references: [id])
   test      SkillTest @relation(fields: [testId], references: [id])
+}
+
+model SiteSettings {
+  id                  String  @id @default("global")
+  commission          Float   @default(15)
+  registrationsOpen   Boolean @default(true)
+  autoApprove         Boolean @default(false)
+  emailNotifications  Boolean @default(true)
+  adminEmail          String  @default("admin@extranow.fr")
+  updatedAt           DateTime @updatedAt
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  missionId     String   @unique
+  amount        Float
+  stripeSession String?
+  status        String   @default("PENDING") // PENDING, PAID, REFUNDED
+  createdAt     DateTime @default(now())
+  mission       Mission  @relation(fields: [missionId], references: [id])
+}
+
+model Conversation {
+  id          String    @id @default(cuid())
+  missionId   String?
+  clientId    String
+  extraId     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  messages    Message[]
+  client      User      @relation(fields: [clientId], references: [id])
+  extra       Extra     @relation(fields: [extraId], references: [id])
+  mission     Mission?  @relation(fields: [missionId], references: [id])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String       // Peut être l'ID du client ou de l'extra
+  text           String
+  read           Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 }

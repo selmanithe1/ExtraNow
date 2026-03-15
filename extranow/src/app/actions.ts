@@ -1,33 +1,11 @@
 "use server";
 
+import { sendEmail } from "@/lib/resend";
+import { ApplicationAcceptedEmail, NewApplicationEmail } from "@/emails/templates";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-
-// Admin credentials (in production, use a proper secrets manager)
-const ADMIN_EMAIL = "admin@extranow.fr";
-const ADMIN_PASSWORD = "admin123";
-
-export async function adminLogin(email: string, password: string) {
-    try {
-        if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-            // Ensure admin exists in DB
-            const admin = await prisma.user.upsert({
-                where: { email: ADMIN_EMAIL },
-                update: {},
-                create: {
-                    email: ADMIN_EMAIL,
-                    name: "Administrateur ExtraNow",
-                    role: "ADMIN",
-                },
-            });
-            return { success: true, admin };
-        }
-        return { success: false, error: "Identifiants incorrects. Utilisez admin@extranow.fr / admin123" };
-    } catch (error) {
-        console.error("Admin login error:", error);
-        return { success: false, error: "Erreur technique lors de la connexion." };
-    }
-}
+import bcrypt from "bcryptjs";
+import { stripe } from "@/lib/stripe";
 
 
 export async function updateMissionStatus(id: string, status: string) {
@@ -53,17 +31,18 @@ export async function getStats() {
         const pendingMissions = await prisma.mission.count({
             where: { status: "EN_ATTENTE" },
         });
+        const totalMissions = await prisma.mission.count();
 
-        // Simulations dynamiques (mix de réel et demo)
         return {
-            totalExtras: (totalExtras || 0) + 5248,
-            activeMissions: activeMissions || 1,
-            pendingMissions: pendingMissions || 4,
-            revenue: `${(activeMissions * 150 + 42850).toLocaleString()} €`,
+            totalExtras,
+            activeMissions,
+            pendingMissions,
+            totalMissions,
+            revenue: `${(activeMissions * 150).toLocaleString()} €`,
             satisfaction: "4.9/5"
         };
     } catch (error) {
-        return { totalExtras: 5248, activeMissions: 1, pendingMissions: 4, revenue: "42,850 €", satisfaction: "4.8/5" };
+        return { totalExtras: 0, activeMissions: 0, pendingMissions: 0, totalMissions: 0, revenue: "0 €", satisfaction: "N/A" };
     }
 }
 
@@ -82,11 +61,13 @@ export async function registerExtra(data: {
     password?: string;
 }) {
     try {
-        const { birthDate, ...rest } = data;
+        const { birthDate, password, ...rest } = data;
+        const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
         const newExtra = await prisma.extra.create({
             data: {
                 ...rest,
                 birthDate: birthDate ? new Date(birthDate) : null,
+                password: hashedPassword,
                 status: "VERIFICATION"
             }
         });
@@ -104,20 +85,47 @@ export async function registerExtra(data: {
     }
 }
 
-export async function loginExtra(email: string, password?: string) {
+export async function registerClient(data: {
+    name: string;
+    companyName: string;
+    email: string;
+    password?: string;
+}) {
     try {
-        // Find extra by email
-        const extra = await prisma.extra.findUnique({
-            where: { email }
-        });
-
-        if (!extra) {
-            return { success: false, error: "Aucun compte trouvé avec cet email." };
+        const { password, ...rest } = data;
+        const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
+        
+        const existingUser = await prisma.user.findUnique({ where: { email: data.email } });
+        if (existingUser) {
+            return { success: false, error: "Cet email est déjà utilisé." };
         }
 
-        // Check password if it exists (in a real app, use bcrypt)
-        if (extra.password && extra.password !== password) {
-            return { success: false, error: "Mot de passe incorrect." };
+        const newUser = await prisma.user.create({
+            data: {
+                ...rest,
+                password: hashedPassword,
+                role: "CLIENT"
+            }
+        });
+        
+        return { success: true, user: newUser };
+    } catch (error: any) {
+        console.error("Registration error details:", error);
+        return { success: false, error: "Erreur technique lors de l'inscription." };
+    }
+}
+
+export async function loginExtra(email: string, password?: string) {
+    try {
+        const extra = await prisma.extra.findUnique({ where: { email } });
+        if (!extra) return { success: false, error: "Aucun compte trouvé avec cet email." };
+
+        if (extra.password && password) {
+            const isBcrypt = extra.password.startsWith("$2");
+            const match = isBcrypt
+                ? await bcrypt.compare(password, extra.password)
+                : extra.password === password;
+            if (!match) return { success: false, error: "Mot de passe incorrect." };
         }
 
         return { success: true, extra };
@@ -155,25 +163,131 @@ export async function getAdminData() {
 }
 
 export async function createMission(data: {
-    company: string;
+    company?: string;
     type: string;
     location: string;
     date: string;
     amount: number;
+    clientId?: string;
 }) {
     try {
+        let finalCompany = data.company || "Entreprise Inconnue";
+        
+        if (data.clientId) {
+            const client = await prisma.user.findUnique({ where: { id: data.clientId } });
+            if (client?.companyName) {
+                finalCompany = client.companyName;
+            } else if (client?.name) {
+                finalCompany = client.name;
+            }
+        }
+
+        const parts = data.date.split('-'); // Handle YYYY-MM-DD from input
+        let parsedDate = new Date(data.date);
+        if (parts.length === 3) {
+            // Ensure local timezone doesn't shift the day backwards if time is midnight UTC
+            parsedDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), 12, 0, 0);
+        }
+
         const mission = await prisma.mission.create({
             data: {
                 ...data,
-                date: new Date(data.date),
-                status: "EN_ATTENTE"
+                company: finalCompany,
+                date: parsedDate,
+                status: "EN_ATTENTE_PAIEMENT" // Updated for Stripe flow
             }
         });
+
+        // ── Stripe Checkout Session ──
+        let checkoutUrl = null;
+        if (process.env.STRIPE_SECRET_KEY) {
+            // Retrieve global commission from settings (defaulting to 15%)
+            let commissionRate = 15;
+            try {
+                const settings = await prisma.siteSettings.findUnique({ where: { id: "global" } });
+                if (settings) commissionRate = settings.commission;
+            } catch (e) {}
+
+            const amountToPay = data.amount + (data.amount * (commissionRate / 100));
+
+            const session = await stripe.checkout.sessions.create({
+                payment_method_types: ['card'],
+                line_items: [
+                    {
+                        price_data: {
+                            currency: 'eur',
+                            product_data: {
+                                name: `Mission ExtraNow : ${data.type}`,
+                                description: `Prestation pour ${finalCompany} à ${data.location}`,
+                            },
+                            unit_amount: Math.round(amountToPay * 100), // Stripe expects cents
+                        },
+                        quantity: 1,
+                    },
+                ],
+                mode: 'payment',
+                success_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/entreprises/dashboard?payment=success&missionId=${mission.id}`,
+                cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/entreprises/dashboard/missions/new?payment=cancelled`,
+                metadata: {
+                    missionId: mission.id,
+                    clientId: data.clientId || "anonymous"
+                }
+            });
+
+            await prisma.payment.create({
+                data: {
+                    missionId: mission.id,
+                    amount: amountToPay,
+                    stripeSession: session.id,
+                    status: "PENDING"
+                }
+            });
+
+            checkoutUrl = session.url;
+        }
+
+        // Update UI everywhere
         revalidatePath("/admin");
-        return { success: true, mission };
+        revalidatePath("/entreprises/dashboard");
+        revalidatePath("/entreprises/dashboard/missions");
+        revalidatePath("/extras/missions");
+        
+        return { success: true, mission, checkoutUrl };
+    } catch (error: any) {
+        console.error("Failed to create mission details:", error);
+        return { success: false, error: "Erreur lors de la création de la mission: " + (error.message || "Erreur interne") };
+    }
+}
+
+export async function getClientMissions(clientId: string) {
+    try {
+        return await prisma.mission.findMany({
+            where: { clientId },
+            orderBy: { createdAt: 'desc' }
+        });
     } catch (error) {
-        console.error("Failed to create mission:", error);
-        return { success: false, error: "Database error" };
+        console.error("Failed to fetch client missions:", error);
+        return [];
+    }
+}
+
+export async function getClientApplications(clientId: string) {
+    try {
+        return await prisma.application.findMany({
+            where: {
+                mission: {
+                    clientId
+                }
+            },
+            include: {
+                extra: true,
+                mission: true
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+    } catch (error) {
+        console.error("Failed to fetch client applications:", error);
+        return [];
     }
 }
 
@@ -194,19 +308,45 @@ export async function getAvailableMissions() {
     }
 }
 
-export async function applyToMission(missionId: string) {
+export async function applyToMission(missionId: string, extraId: string) {
     try {
-        const extra = await getLatestExtra();
-        if (!extra) return { success: false, error: "No extra found" };
+        if (!extraId) return { success: false, error: "Non authentifié" };
+
+        // Vérifier si déjà candidaté
+        const existing = await prisma.application.findFirst({
+            where: { missionId, extraId }
+        });
+        if (existing) return { success: false, error: "Vous avez déjà postulé à cette mission." };
 
         const application = await prisma.application.create({
-            data: {
-                missionId,
-                extraId: extra.id,
-                status: "PENDING"
-            }
+            data: { missionId, extraId, status: "PENDING" }
         });
 
+        revalidatePath("/extras/missions");
+        // Send email to client
+        const missionInfo = await prisma.mission.findUnique({
+            where: { id: missionId },
+            include: { client: { select: { email: true, name: true, companyName: true } } }
+        });
+
+        const extraInfo = await prisma.extra.findUnique({
+            where: { id: extraId },
+            select: { name: true }
+        });
+
+        if (missionInfo?.client?.email && extraInfo) {
+            await sendEmail({
+                to: missionInfo.client.email,
+                subject: `Nouvelle candidature pour ${missionInfo.type}`,
+                react: NewApplicationEmail({
+                    companyName: (missionInfo.client as any).companyName || missionInfo.client.name || "l'établissement",
+                    extraName: extraInfo.name,
+                    missionType: missionInfo.type,
+                })
+            });
+        }
+
+        revalidatePath("/extras/missions");
         revalidatePath("/admin");
         return { success: true, application };
     } catch (error) {
@@ -422,6 +562,110 @@ export async function updateApplicationStatus(id: string, status: string) {
     }
 }
 
+export async function updateApplicationStatusByClient(id: string, status: string, clientId: string) {
+    try {
+        // Mettre à jour si la candidature appartient bien à une mission de ce client
+        const app = await prisma.application.updateMany({
+            where: { 
+                id, 
+                mission: { clientId } 
+            },
+            data: { status }
+        });
+        
+        if (app.count === 0) {
+            return { success: false, error: "Non autorisé ou introuvable" };
+        }
+
+        // Send Email to Extra if Accepted
+        if (status === "ACCEPTED") {
+            const applicationData = await prisma.application.findUnique({
+                where: { id },
+                include: {
+                    extra: { select: { email: true, name: true } },
+                    mission: { select: { type: true, date: true, client: { select: { companyName: true, name: true } } } }
+                }
+            });
+
+            if (applicationData && (applicationData as any).extra?.email && (applicationData as any).mission) {
+                const appData = applicationData as any;
+                await sendEmail({
+                    to: appData.extra.email,
+                    subject: "Votre candidature a été acceptée ! 🎉",
+                    react: ApplicationAcceptedEmail({
+                        extraName: appData.extra.name,
+                        companyName: appData.mission.client.companyName || appData.mission.client.name || "Une entreprise",
+                        missionType: appData.mission.type,
+                        missionDate: new Date(appData.mission.date).toLocaleDateString('fr-FR'),
+                    })
+                });
+            }
+        }
+
+        revalidatePath("/entreprises/dashboard/applications");
+        revalidatePath("/extras/missions");
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: "Erreur lors de la mise à jour" };
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// STRIPE CONNECT FOR EXTRAS
+// ═══════════════════════════════════════════════════════════
+
+export async function createStripeConnectAccount(extraId: string) {
+    try {
+        if (!process.env.STRIPE_SECRET_KEY) {
+            return { success: false, error: "Stripe n'est pas configuré sur ce serveur." };
+        }
+
+        const extra = await prisma.extra.findUnique({ where: { id: extraId } });
+        if (!extra) return { success: false, error: "Extra introuvable." };
+
+        let accountId = extra.stripeAccountId;
+
+        // Create a new Express account if they don't have one
+        if (!accountId) {
+            const account = await stripe.accounts.create({
+                type: 'express',
+                email: extra.email,
+                capabilities: {
+                    card_payments: { requested: true },
+                    transfers: { requested: true },
+                },
+                business_type: 'individual',
+                individual: {
+                    first_name: extra.name?.split(' ')[0] || '',
+                    last_name: extra.name?.split(' ').slice(1).join(' ') || '',
+                    email: extra.email,
+                }
+            });
+
+            accountId = account.id;
+
+            // Save the account ID to the Extra model
+            await prisma.extra.update({
+                where: { id: extraId },
+                data: { stripeAccountId: accountId }
+            });
+        }
+
+        // Create an onboarding link
+        const accountLink = await stripe.accountLinks.create({
+            account: accountId,
+            refresh_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/extras/dashboard/settings?stripe=refresh`,
+            return_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/extras/dashboard/settings?stripe=return`,
+            type: 'account_onboarding',
+        });
+
+        return { success: true, url: accountLink.url };
+    } catch (error: any) {
+        console.error("Stripe Connect Error:", error);
+        return { success: false, error: "Erreur lors de la configuration: " + error.message };
+    }
+}
+
 // ═══════════════════════════════════════════════════════════
 // EXPORT
 // ═══════════════════════════════════════════════════════════
@@ -514,5 +758,122 @@ export async function getSystemNotifications() {
         return { success: true, data: notifications };
     } catch (error) {
         return { success: true, data: [] };
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// SITE SETTINGS
+// ═══════════════════════════════════════════════════════════
+
+export async function getSettings() {
+    try {
+        const settings = await prisma.siteSettings.findUnique({ where: { id: "global" } });
+        if (!settings) {
+            // Créer les settings par défaut si pas encore créés
+            return await prisma.siteSettings.create({
+                data: { id: "global" }
+            });
+        }
+        return settings;
+    } catch (error) {
+        console.error("Failed to get settings:", error);
+        return {
+            id: "global",
+            commission: 15,
+            registrationsOpen: true,
+            autoApprove: false,
+            emailNotifications: true,
+            adminEmail: "admin@extranow.fr",
+        };
+    }
+}
+
+export async function updateSettings(data: {
+    commission?: number;
+    registrationsOpen?: boolean;
+    autoApprove?: boolean;
+    emailNotifications?: boolean;
+    adminEmail?: string;
+}) {
+    try {
+        const settings = await prisma.siteSettings.upsert({
+            where: { id: "global" },
+            update: data,
+            create: { id: "global", ...data }
+        });
+        revalidatePath("/admin/settings");
+        return { success: true, settings };
+    } catch (error) {
+        console.error("Failed to update settings:", error);
+        return { success: false, error: "Erreur lors de la sauvegarde" };
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ANALYTICS — STATS RÉELLES
+// ═══════════════════════════════════════════════════════════
+
+export async function getExtrasStatusStats() {
+    try {
+        const [actif, verification, suspendu] = await Promise.all([
+            prisma.extra.count({ where: { status: "ACTIF" } }),
+            prisma.extra.count({ where: { status: "VERIFICATION" } }),
+            prisma.extra.count({ where: { status: "SUSPENDU" } }),
+        ]);
+        const total = actif + verification + suspendu || 1;
+        return [
+            { name: "Extras actifs", value: Math.round((actif / total) * 100) },
+            { name: "En vérification", value: Math.round((verification / total) * 100) },
+            { name: "Suspendus", value: Math.round((suspendu / total) * 100) },
+        ];
+    } catch (error) {
+        return [
+            { name: "Extras actifs", value: 68 },
+            { name: "En vérification", value: 22 },
+            { name: "Suspendus", value: 10 },
+        ];
+    }
+}
+
+export async function getMissionTypeStats() {
+    try {
+        const missions = await prisma.mission.findMany({ select: { type: true } });
+        const countMap: Record<string, number> = {};
+        missions.forEach(m => {
+            const key = m.type || "Autre";
+            countMap[key] = (countMap[key] || 0) + 1;
+        });
+        return Object.entries(countMap)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 6)
+            .map(([name, value]) => ({ name, value }));
+    } catch (error) {
+        return [
+            { name: "Serveur", value: 42 },
+            { name: "Cuisinier", value: 28 },
+            { name: "Barman", value: 18 },
+            { name: "Plongeur", value: 8 },
+            { name: "Hôtesse", value: 4 },
+        ];
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ADMIN CRUD — TESTS DE COMPÉTENCES
+// ═══════════════════════════════════════════════════════════
+
+export async function createSkillTest(data: {
+    title: string;
+    category: string;
+    description?: string;
+    questions: string; // JSON string
+}) {
+    try {
+        const test = await prisma.skillTest.create({ data });
+        revalidatePath("/admin");
+        return { success: true, test };
+    } catch (error) {
+        console.error("Failed to create skill test:", error);
+        return { success: false, error: "Erreur lors de la création du test" };
     }
 }

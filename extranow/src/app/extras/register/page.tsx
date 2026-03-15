@@ -248,8 +248,8 @@ export default function ExtraRegistrationPage() {
                         <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-accent font-black transition-all uppercase text-[10px] tracking-widest font-outfit">
                             <ChevronLeft size={16} strokeWidth={3} /> Accueil
                         </Link>
-                        <Link href="/extras/login" className="text-[9px] font-black text-orange-500 uppercase tracking-widest italic ml-1">
-                            Déjà inscrit ? Connexion
+                        <Link href="/login" className="text-[9px] font-black text-orange-500 uppercase tracking-widest italic ml-1">
+                            Connexion
                         </Link>
                     </div>
                     <div className="flex gap-2">

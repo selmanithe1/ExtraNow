@@ -14,10 +14,14 @@ import {
     CheckCircle2
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { getAvailableMissions, applyToMission } from "@/app/actions";
 import { HOSPITALITY_ROLES } from "@/app/data";
 
 export default function MissionsMarketplace() {
+    const { data: session } = useSession();
+    const extraId = (session?.user as any)?.extraId as string | undefined;
+
     const [missions, setMissions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
@@ -36,8 +40,9 @@ export default function MissionsMarketplace() {
     const categories = ["Tous", ...HOSPITALITY_ROLES.slice(0, 5)];
 
     const handleApply = async (missionId: string) => {
+        if (!extraId) return;
         setSubmittingId(missionId);
-        const result = await applyToMission(missionId);
+        const result = await applyToMission(missionId, extraId);
         if (result.success) {
             setAppliedIds(prev => [...prev, missionId]);
         }

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, Shield, Database, Users, Bell, Toggle, Save, Eye, EyeOff, RefreshCw } from "lucide-react";
+import { Settings, Shield, Database, Users, Bell, Save, Eye, EyeOff, RefreshCw } from "lucide-react";
 
 export default function AdminSettings() {
     const [adminEmail, setAdminEmail] = useState("admin@extranow.fr");
