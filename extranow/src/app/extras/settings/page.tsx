@@ -1,9 +1,26 @@
 "use client";
 
-import { Settings, Clock, User, Bell, Shield, LogOut } from "lucide-react";
+import { Settings, Clock, User, Bell, Shield, LogOut, DollarSign, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
+import { useState } from "react";
+import { createStripeConnectAccount } from "@/app/actions";
+import { useSession } from "next-auth/react";
 
 export default function ExtrasSettings() {
+    const { data: session } = useSession();
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleStripeConnect = async () => {
+        setIsLoading(true);
+        const result = await createStripeConnectAccount(session?.user?.id as string);
+        if (result.success && result.url) {
+            window.location.href = result.url;
+        } else {
+            alert(result.error || "Une erreur est survenue");
+            setIsLoading(false);
+        }
+    };
+
     return (
         <div className="max-w-4xl mx-auto space-y-10">
             <div className="flex items-center justify-between">
@@ -17,7 +34,8 @@ export default function ExtrasSettings() {
                 {/* Sidebar Settings */}
                 <div className="space-y-2">
                     {[
-                        { icon: User, label: "Profil Public", active: true },
+                        { icon: User, label: "Profil Public", active: false },
+                        { icon: DollarSign, label: "Paiements (Stripe)", active: true },
                         { icon: Bell, label: "Notifications", active: false },
                         { icon: Shield, label: "Sécurité", active: false },
                         { icon: LogOut, label: "Compte", active: false, color: "text-red-500" },
@@ -37,18 +55,28 @@ export default function ExtrasSettings() {
                     <motion.div
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
-                        className="w-20 h-20 bg-slate-50 text-slate-300 rounded-[1.5rem] flex items-center justify-center border-2 border-dashed border-slate-200"
+                        className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-[1.5rem] flex items-center justify-center border-2 border-dashed border-emerald-200"
                     >
-                        <Settings size={40} />
+                        <DollarSign size={40} />
                     </motion.div>
-                    <div className="space-y-2">
-                        <h3 className="text-2xl font-black text-slate-900">Édition en cours...</h3>
-                        <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] flex items-center justify-center gap-2">
-                            <Clock size={16} /> Bientôt disponible
+                    <div className="space-y-4 max-w-md">
+                        <h3 className="text-2xl font-black text-slate-900">Recevoir vos paiements</h3>
+                        <p className="text-slate-500 font-medium text-sm leading-relaxed">
+                            Pour être payé après vos missions, vous devez configurer un compte sécurisé via <b>Stripe Connect</b>. 
+                            C'est gratuit et ça permet de virer vos gains directement sur votre compte bancaire.
                         </p>
                     </div>
-                    <p className="max-w-xs text-slate-400 font-medium text-sm">
-                        La gestion complète de votre profil, de vos notifications et de votre sécurité arrive dans la prochaine mise à jour.
+                    
+                    <button 
+                        onClick={handleStripeConnect}
+                        disabled={isLoading}
+                        className="mt-4 bg-[#635BFF] hover:bg-[#5046e5] text-white px-8 py-4 rounded-full font-bold transition-all shadow-lg active:scale-95 flex items-center gap-3 disabled:opacity-50"
+                    >
+                        {isLoading ? "Configuration en cours..." : "Configurer mon compte Stripe"}
+                        {!isLoading && <ExternalLink size={18} />}
+                    </button>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-4">
+                        Paiements sécurisés par Stripe
                     </p>
                 </div>
             </div>

@@ -21,8 +21,11 @@ import {
 import { motion, useScroll, useTransform, useSpring, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { Footer } from "@/components/Footer";
 
 export default function LandingPage() {
+  const { data: session } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({
@@ -88,12 +91,21 @@ export default function LandingPage() {
                 </Link>
               </motion.div>
             ))}
-            <Link
-              href="/admin/login"
-              className="rounded-2xl bg-foreground px-8 py-3.5 text-xs font-black text-white shadow-xl hover:shadow-accent/20 transition-all active:scale-95 uppercase tracking-[0.2em] flex items-center gap-2"
-            >
-              <ShieldCheck size={16} /> Admin
-            </Link>
+            {session ? (
+              <Link
+                href="/dashboard"
+                className="rounded-2xl bg-accent px-8 py-3.5 text-xs font-black text-white shadow-xl hover:shadow-accent/40 transition-all active:scale-95 uppercase tracking-[0.2em] flex items-center gap-2"
+              >
+                <ShieldCheck size={16} /> Mon Espace
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="rounded-2xl bg-foreground px-8 py-3.5 text-xs font-black text-white shadow-xl hover:shadow-accent/20 transition-all active:scale-95 uppercase tracking-[0.2em] flex items-center gap-2"
+              >
+                <ShieldCheck size={16} /> Connexion
+              </Link>
+            )}
           </div>
 
           <button className="lg:hidden text-foreground" onClick={() => setIsMenuOpen(!isMenuOpen)}>
@@ -116,7 +128,11 @@ export default function LandingPage() {
             </button>
             <Link href="/entreprises" className="text-4xl font-black text-white italic">Entreprises</Link>
             <Link href="/extras" className="text-4xl font-black text-white italic">Extras</Link>
-            <Link href="/admin/login" className="text-xl font-bold text-accent">Administration</Link>
+            {session ? (
+              <Link href="/dashboard" className="text-xl font-bold text-accent border border-accent rounded-full px-6 py-3">Mon Espace</Link>
+            ) : (
+              <Link href="/login" className="text-xl font-bold text-accent border border-accent rounded-full px-6 py-3">Connexion</Link>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -166,29 +182,43 @@ export default function LandingPage() {
             transition={{ delay: 0.3 }}
             className="flex flex-col sm:flex-row justify-center items-center gap-6 px-4"
           >
-            <Link
-              href="/entreprises"
-              className="group relative overflow-hidden rounded-3xl bg-accent px-14 py-8 text-xl font-black text-white hover:shadow-[0_0_40px_-10px_rgba(249,115,22,0.6)] transition-all active:scale-95 uppercase tracking-widest w-full sm:w-auto text-center"
-            >
-              <span className="relative z-10 flex items-center justify-center gap-3">Je Recrute <Building2 size={24} /></span>
-              <motion.div
-                className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500"
-              />
-            </Link>
-            <div className="flex flex-col items-center gap-4 w-full sm:w-auto">
+            {session ? (
               <Link
-                href="/extras/register"
-                className="group rounded-3xl bg-white/5 border border-white/10 px-14 py-8 text-xl font-black text-white hover:bg-white/10 transition-all active:scale-95 uppercase tracking-widest backdrop-blur-md w-full text-center"
+                href="/dashboard"
+                className="group relative overflow-hidden rounded-3xl bg-accent px-14 py-8 text-xl font-black text-white hover:shadow-[0_0_40px_-10px_rgba(249,115,22,0.6)] transition-all active:scale-95 uppercase tracking-widest w-full sm:w-auto text-center"
               >
-                <span className="flex items-center justify-center gap-3">Je suis Extra <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" /></span>
+                <span className="relative z-10 flex items-center justify-center gap-3">Accéder à mon espace <ArrowRight size={24} /></span>
+                <motion.div
+                  className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500"
+                />
               </Link>
-              <Link
-                href="/extras/login"
-                className="text-xs font-black text-white/30 uppercase tracking-[0.3em] hover:text-accent transition-colors italic"
-              >
-                Déjà inscrit ? <span className="underline decoration-accent/50 underline-offset-4">Se Connecter</span>
-              </Link>
-            </div>
+            ) : (
+              <>
+                <Link
+                  href="/register?type=entreprise"
+                  className="group relative overflow-hidden rounded-3xl bg-accent px-14 py-8 text-xl font-black text-white hover:shadow-[0_0_40px_-10px_rgba(249,115,22,0.6)] transition-all active:scale-95 uppercase tracking-widest w-full sm:w-auto text-center"
+                >
+                  <span className="relative z-10 flex items-center justify-center gap-3">Je Recrute <Building2 size={24} /></span>
+                  <motion.div
+                    className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500"
+                  />
+                </Link>
+                <div className="flex flex-col items-center gap-4 w-full sm:w-auto">
+                  <Link
+                    href="/register?type=extra"
+                    className="group rounded-3xl bg-white/5 border border-white/10 px-14 py-8 text-xl font-black text-white hover:bg-white/10 transition-all active:scale-95 uppercase tracking-widest backdrop-blur-md w-full text-center"
+                  >
+                    <span className="flex items-center justify-center gap-3">Je suis Extra <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" /></span>
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="text-xs font-black text-white/30 uppercase tracking-[0.3em] hover:text-accent transition-colors italic"
+                  >
+                    Déjà inscrit ? <span className="underline decoration-accent/50 underline-offset-4">Se Connecter</span>
+                  </Link>
+                </div>
+              </>
+            )}
           </motion.div>
         </div>
 
@@ -316,57 +346,28 @@ export default function LandingPage() {
           <div className="absolute inset-0 bg-accent/10 blur-[100px] -animate-pulse" />
           <div className="relative z-10">
             <h2 className="text-5xl md:text-9xl font-black text-white mb-10 tracking-tight leading-none italic font-outfit">Êtes-vous <br /><span className="gradient-text">Extra</span> ?</h2>
-            <div className="flex flex-col sm:flex-row justify-center gap-8">
-              <Link href="/entreprises" className="bg-white text-primary px-16 py-8 rounded-3xl font-black text-xl hover:scale-105 transition-all uppercase tracking-widest shadow-xl">
-                Recruter
-              </Link>
-              <Link href="/extras/register" className="bg-accent text-white px-16 py-8 rounded-3xl font-black text-xl hover:scale-105 transition-all uppercase tracking-widest shadow-xl shadow-accent/30">
-                Postuler
-              </Link>
-            </div>
+            {session ? (
+              <div className="flex justify-center">
+                <Link href="/dashboard" className="bg-white text-primary px-16 py-8 rounded-3xl font-black text-xl hover:scale-105 transition-all uppercase tracking-widest shadow-xl">
+                  Retour à mon espace
+                </Link>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row justify-center gap-8">
+                <Link href="/register?type=entreprise" className="bg-white text-primary px-16 py-8 rounded-3xl font-black text-xl hover:scale-105 transition-all uppercase tracking-widest shadow-xl">
+                  Recruter
+                </Link>
+                <Link href="/register?type=extra" className="bg-accent text-white px-16 py-8 rounded-3xl font-black text-xl hover:scale-105 transition-all uppercase tracking-widest shadow-xl shadow-accent/30">
+                  Postuler
+                </Link>
+              </div>
+            )}
           </div>
         </motion.div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-primary pt-40 pb-20 text-white/30 border-t border-white/5">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-20 mb-32">
-            <div className="lg:col-span-2">
-              <div className="text-4xl font-black text-white italic mb-10 font-outfit">
-                Extra<span className="text-accent">Now</span>
-              </div>
-              <p className="max-w-xs text-lg font-medium leading-relaxed">Le standard d'excellence pour le recrutement hôtelier. Chaque talent, chaque établissement, chaque service compte.</p>
-            </div>
-            <div>
-              <p className="text-white font-black uppercase tracking-[0.2em] text-[10px] mb-8">Navigation</p>
-              <div className="flex flex-col gap-4 font-bold text-sm">
-                <Link href="/entreprises" className="hover:text-accent transition-all uppercase">Entreprises</Link>
-                <Link href="/extras" className="hover:text-accent transition-all uppercase">Extras</Link>
-                <Link href="/faq" className="hover:text-accent transition-all uppercase">FAQ</Link>
-                <Link href="/admin/login" className="hover:text-accent transition-all uppercase">Plateforme</Link>
-              </div>
-            </div>
-            <div>
-              <p className="text-white font-black uppercase tracking-[0.2em] text-[10px] mb-8">Légal</p>
-              <div className="flex flex-col gap-4 font-bold text-sm">
-                <p className="hover:text-accent transition-all uppercase cursor-pointer">CGU</p>
-                <p className="hover:text-accent transition-all uppercase cursor-pointer">Confidentialité</p>
-                <p className="hover:text-accent transition-all uppercase cursor-pointer">Assurance</p>
-                <p className="hover:text-accent transition-all uppercase cursor-pointer">Cookies</p>
-              </div>
-            </div>
-          </div>
-          <div className="pt-20 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-10">
-            <p className="text-[10px] font-black uppercase tracking-[0.5em]">© 2024 Extra Now • Premium Hospitality</p>
-            <div className="flex gap-10 text-[10px] font-black uppercase tracking-widest">
-              <span className="hover:text-white transition-colors cursor-pointer">LinkedIn</span>
-              <span className="hover:text-white transition-colors cursor-pointer">Instagram</span>
-              <span className="hover:text-white transition-colors cursor-pointer">Twitter</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
       <style jsx global>{`
                 @keyframes infinite-scroll {
